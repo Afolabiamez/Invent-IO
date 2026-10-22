@@ -66,3 +66,9 @@ The original flow was manually checked in a browser at desktop and mobile widths
 ## Railway deployment
 
 Connect Afolabiamez/Invent-IO, select branch main, and set the service Root Directory to /frontend. Use npm run build as the build command and npm start as the start command. Railway supplies PORT automatically. Generate a public domain after deployment succeeds.
+
+## Owner Home fidelity (HM-01)
+
+The default Home screen implements Figma node `356:4833`: Amaka Beauty/date/avatar, Wallet, Today’s sales with profit, a two-payment preview, the labeled Record payment shortcut, and active Home navigation. On desktop the same sections use two columns above the pending list; on mobile they follow the Figma stack. Native OS status/gesture chrome is provided by the browser/device rather than rendered in HTML. Payment rows expand to keep notes readable.
+
+`public/home.js` and `public/home.css` contain this screen. Its sample daily summary includes an earlier-sales fixture (₦33,000 across 11 sales, ₦6,700 known profit, one missing-cost sale) plus the recent editable sales; it starts at the Figma’s ₦48,500 / 14 sales / ₦12,300 profit. The existing Sales screen currently lists the recent editable sample sales only. Wallet values are sample fixtures; wallet/withdraw buttons explain the pending backend integration. The demo’s Home date matches the supplied Figma sample.
