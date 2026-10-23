@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: inventio
+      POSTGRES_PASSWORD: inventio_dev
+      POSTGRES_DB: inventio
+    ports:
+      # Host port defaults to 5432; override with POSTGRES_PORT in .env when 5432
+      # is taken by another project on your machine.
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      # Host port defaults to 6379; override with REDIS_PORT in .env when taken.
+      - '${REDIS_PORT:-6379}:6379'
+
+volumes:
+  pgdata:
