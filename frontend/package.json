@@ -2,13 +2,16 @@
   "name": "invent-io-frontend",
   "version": "0.1.0",
   "private": true,
-  "description": "Web-first Invent IO sales and inventory frontend prototype",
+  "description": "Responsive Invent IO design preview with owner and staff flows",
   "type": "module",
   "scripts": {
     "dev": "node scripts/serve.mjs",
     "start": "node scripts/serve.mjs",
-    "check": "node --check public/app.js && node --check public/home.js && node --check scripts/serve.mjs && node --check scripts/build.mjs",
-    "build": "node scripts/build.mjs"
+    "check": "node --check public/app.js && node --check public/data.js && node --check scripts/serve.mjs && node --check scripts/build.mjs && node --check public/model.js",
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/*.test.mjs"
   },
-  "engines": { "node": ">=22" }
+  "engines": {
+    "node": ">=22"
+  }
 }

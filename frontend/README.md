@@ -1,74 +1,50 @@
-# Invent IO Frontend
+# Invent IO frontend
 
-Web-first sales and inventory prototype based on the Invent IO mobile Figma flow. Desktop uses a sidebar, payment table, and sale side panel; smaller screens use bottom navigation and a full-screen sale panel.
+Responsive, browser-only implementation of the Invent IO desktop and mobile Figma flows. Built with plain HTML, CSS and JavaScript, with no runtime package dependencies.
 
-- Backend repository: [Afolabiamez/Invent-IO](https://github.com/Afolabiamez/Invent-IO)
-- Private product preview: [Inventio sales workspace](https://inventio-sales-workspace.adehsanya.chatgpt.site) (ChatGPT sign-in required)
-- Figma starting screen: [Sales · Pending payments](https://www.figma.com/design/MLpHP16bR0l2gDUHf918yv/INVENT-IO?node-id=397-5476)
+## Run and verify
 
-## Run locally
-
-Requires Node.js 22 or newer. There are no npm dependencies and no installation step.
+Requires Node 22+.
 
 ```sh
-git clone https://github.com/Afolabiamez/Invent-IO.git
-cd Invent-IO/frontend
+cd frontend
 npm run dev
-```
-
-Open http://localhost:4173. Set `PORT` to use another port.
-
-```sh
 npm run check
+npm test
 npm run build
 ```
 
-`check` validates JavaScript syntax. `build` copies the runnable static site into `dist/`, which can be served by a static hosting service. The development server listens on loopback locally. When PORT is supplied (as on Railway), it listens on 0.0.0.0. HOST can override the listening address.
+Open http://localhost:4173. The root is the landing page. Open `/#/home` to review the populated owner workspace directly, or log in with `amaka@mail.com` / `inventio-demo`. Staff preview is under Account → Preview options. The staff sample email is `bisi@mail.com`, with the same demo password.
 
 ## Included flows
 
-- Pending payments, Recorded, and Not a sale views
-- Search, sorting, and recorded-date filters
-- Manual payment entry with Cash, Transfer, or Card
-- Product selection, quantities, live totals, and mismatch acknowledgement
-- Review and confirm sale, profit calculation, and stock deduction
-- Low-stock and negative-count warnings
-- Sale detail, void sale, stock return, and restore to pending
-- Save a payment for later, next pending payment, and summary views
+- Landing, mobile intros, login, create account, forgot/reset password, invite acceptance, business setup, first products and ready state.
+- Owner and staff Home; Pending payments, Recorded/My sales and Not a sale; sorting, date selection and summaries.
+- Manual payment, Cash editing, product quantities, mobile review, confirmation, stock deduction, sale detail, void with stock return, and restore to pending.
+- Products/Stock, search and filters, product details, photo upload, add/edit, add received stock, correct count with a changed-stock guard, archive and restore.
+- Wallet, transaction filters/detail, withdrawal amount and fee review, simulated confirmation/cancellation and bank account setup.
+- Team, local invite links, member permissions and removal; all eight permission switches and inventory dependencies.
+- Weekly summary, business settings, account and logout, form validation, unsaved-change dialogs and session-expired preview.
+- Account → Preview options → Review designed states provides isolated loading/error/empty patterns, mobile intros, and withdrawal status previews.
 
-## Current data model and backend handoff
+## Design sources and responsive rules
 
-This is an interactive frontend prototype. It uses sample customers, payments, products, and stock. It does not call the backend or Paystack, perform authentication, or move money. Demo dates are fixed to 15 October 2026 for repeatable review.
+Figma file `MLpHP16bR0l2gDUHf918yv`: desktop page `677:2`, mobile page `248:2`, layout notes `677:10`, approved mobile adaptations `737:7515`. Source assets are downloaded under public/assets; screenshots are never used as application UI.
 
-`public/app.js` contains the initial data, UI rendering, and state transitions. Changes persist in browser localStorage under `inventio-web-v1`; **More → Reset demo data** restores the samples. Data is local to each browser and origin.
+Desktop >=1200 uses a 248px sidebar, 32px page padding and tables. Tablet 768–1199 uses a 72px rail, 24px padding and stacked detail/selection views. Mobile <768 uses 16px padding, lists, bottom navigation, full-screen forms and fixed actions. Native status bars, keyboards and gesture indicators belong to the device and are not drawn by this website. Browser amount inputs remain keyboard-accessible alongside the designed numeric keypad.
 
-Before production integration, agree on the API contract with the backend team. Replace local state persistence with authenticated endpoints for products, payments, sales, voiding, and summaries. Sale creation, payment matching, stock deduction, and void reversal should be handled atomically by the backend. Profit, permissions, and financial totals must be calculated and enforced server-side. Do not place server credentials or Paystack secret keys in client files.
+## Demo data and integration boundaries
 
-## Structure
+This is an interactive design preview, not production authentication or payment processing. No API requests, real messages, bank verification or money movement occur. Passwords are never saved. Login accepts the sample identities and demo password only. Creating an account creates a local sample business. Invite links work once with a seven-day expiry only in the same browser/origin; cross-device team membership needs the backend.
 
-```text
-public/
-  index.html       Application shell
-  app.js           Demo data, flow state, and UI handlers
-  style.css        Responsive layout and design tokens
-  assets/          Local Figma product images and SVG icons
-scripts/
-  serve.mjs        Dependency-free local HTTP server
-  build.mjs        Copies static output to dist/
-```
+Changes persist in localStorage `invent-io-design-demo-v2`. Earlier prototype data under `inventio-web-v1` is left untouched. Account → Reset demo data restores the samples. Dates follow the Figma example, Sat 3 Oct 2026. The Home aggregate includes earlier sample sales beyond the recent editable list; totals start at ₦48,500 / 14 sales / ₦12,300 known profit. Filters and counts reflect current local products rather than reproducing non-reconciled badge counts from static mockups.
 
-The CSS loads Inter from Google Fonts, with Arial as a fallback. Product images and icons are stored locally; the app does not rely on expiring Figma asset URLs. Hosting-specific identity and credentials are excluded from this repository.
+`public/data.js` holds fixtures and persistence, `public/model.js` holds tested local sale/void/cancellation transitions, and `public/app.js` holds routes and UI. The six model tests cover atomic validation, duplicate sale submission, negative stock, stock reversal, price snapshots, missing cost and single refunds. These client checks are not a security boundary: production permissions, identities, financial totals, stock and payment idempotency must be enforced by authenticated backend endpoints.
 
-## Validation
-
-The original flow was manually checked in a browser at desktop and mobile widths, including matching products to payment, confirmation, stock deduction, voiding and stock return, restoring payments, saving for later, persistence after reload, and the empty date-filter state. `npm run check` is a syntax check, not an automated end-to-end test suite.
+Figma explicitly leaves payment-difference limits and persistence, save/retry contracts, real-time payment failures, manual cash creation contracts, backend role mapping, branch stock rules and provider-confirmed Transfer editing unresolved. The demo requires an exact selected total, leaves Transfer amounts immutable, and does not invent those production contracts. Provider status progression, real email delivery and verification failures require backend integration. Loading/error/withdrawal variants are review fixtures rather than fake background network activity.
 
 ## Railway deployment
 
-Connect Afolabiamez/Invent-IO, select branch main, and set the service Root Directory to /frontend. Use npm run build as the build command and npm start as the start command. Railway supplies PORT automatically. Generate a public domain after deployment succeeds.
+The intended repository is **Afolabiamez/Invent-IO**, with Root Directory `/frontend`, build command `npm run build`, start command `npm start`. Set branch to the reviewed branch, or merge the PR and deploy `main`. Railway supplies `PORT`; the server binds `0.0.0.0` when PORT is present. No secrets are needed for this design preview.
 
-## Owner Home fidelity (HM-01)
-
-The default Home screen implements Figma node `356:4833`: Amaka Beauty/date/avatar, Wallet, Today’s sales with profit, a two-payment preview, the labeled Record payment shortcut, and active Home navigation. On desktop the same sections use two columns above the pending list; on mobile they follow the Figma stack. Native OS status/gesture chrome is provided by the browser/device rather than rendered in HTML. Payment rows expand to keep notes readable.
-
-`public/home.js` and `public/home.css` contain this screen. Its sample daily summary includes an earlier-sales fixture (₦33,000 across 11 sales, ₦6,700 known profit, one missing-cost sale) plus the recent editable sales; it starts at the Figma’s ₦48,500 / 14 sales / ₦12,300 profit. The existing Sales screen currently lists the recent editable sample sales only. Wallet values are sample fixtures; wallet/withdraw buttons explain the pending backend integration. The demo’s Home date matches the supplied Figma sample.
+The supplied live site was still the older prototype during this audit. GitHub deployment records were found on **adehsanya/Invent-IO-Frontend** (Railway project `outstanding-serenity`), while the team repo had none. Check the Railway service's Source repository, branch and root before expecting team-repo commits to deploy. A pushed PR is not evidence of a successful live deployment.
