@@ -13,6 +13,8 @@ import { PaymentsModule } from './payments/payments.module';
 import { SalesModule } from './sales/sales.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { RealtimeModule } from './realtime/realtime.module';
+import { PayoutModule } from './payout/payout.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -31,6 +33,8 @@ import { RealtimeModule } from './realtime/realtime.module';
     SalesModule,
     NotificationsModule,
     RealtimeModule,
+    ReportsModule,
+    PayoutModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,17 +1,23 @@
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, ConflictException, Logger, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenService } from './refresh-token.service';
+import { EmailVerificationService } from './email-verification.service';
+import { NotificationService } from '../notifications/notification.service';
 
 @Injectable()
 export class AuthService {
+    private readonly log = new Logger(AuthService.name);
+
     constructor(
         private prisma: PrismaService,
         private jwt: JwtService,
-        private refreshTokens: RefreshTokenService
+        private refreshTokens: RefreshTokenService,
+        private emailVerification: EmailVerificationService,
+        private notifications: NotificationService,
     ) {}
 
     async register(dto: RegisterDto) {
@@ -52,12 +58,32 @@ export class AuthService {
             return { org, branch, user, membership }
         });
 
+        // Welcome (from hello@) + verification (from noreply@) emails. Never let a
+        // delivery hiccup fail registration — the user is created either way.
+        try {
+            await this.notifications.send({
+                organizationId: result.org.id,
+                userId: result.user.id,
+                channel: 'email',
+                to: result.user.email,
+                template: 'welcome',
+                data: { name: result.user.name, businessName: result.org.name },
+            });
+            await this.emailVerification.issueAndSend({
+                id: result.user.id,
+                email: result.user.email,
+                name: result.user.name,
+            });
+        } catch (e) {
+            this.log.error(`onboarding email failed for ${result.user.id}: ${(e as Error).message}`);
+        }
+
         const accessToken = await this.signAccessToken(result.user.id);
         const refreshToken = await this.refreshTokens.issue(result.user.id);
-        return { 
-            accessToken, 
-            refreshToken, 
-            organizationId: result.org.id, 
+        return {
+            accessToken,
+            refreshToken,
+            organizationId: result.org.id,
             userId: result.user.id,
         };
     }

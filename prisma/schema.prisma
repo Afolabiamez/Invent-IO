@@ -25,6 +25,7 @@ model Organization {
   payments              Payment[]
   sales                 Sale[]
   managedPaymentAccount ManagedPaymentAccount?
+  payoutAccount         PayoutAccount?
 }
 
 model Branch {
@@ -44,9 +45,31 @@ model User {
   email         String         @unique
   phone         String?
   passwordHash  String
+  emailVerified Boolean        @default(false)
   createdAt     DateTime       @default(now())
   memberships   Membership[]
   refreshTokens RefreshToken[]
+  pushSubscriptions PushSubscription[]
+  emailVerificationTokens EmailVerificationToken[]
+  passwordResetTokens PasswordResetToken[]
+  otpCodes      OtpCode[]
+}
+
+// A Web Push endpoint for one browser/device of one user. The push service URL
+// (endpoint) is globally unique; the p256dh/auth keys encrypt the payload so
+// only that browser can read it. Pruned when the push service reports it gone.
+model PushSubscription {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  organizationId String
+  endpoint       String   @unique
+  p256dh         String
+  auth           String
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([userId])
 }
 
 model Membership {
@@ -160,6 +183,71 @@ model RefreshToken {
   usedAt     DateTime?
   revokedAt  DateTime?
   replacedBy String?
+}
+
+// Single-use, short-lived token for confirming a user's email address. Only the
+// SHA-256 hash is stored (never the raw token), the same way refresh tokens are
+// kept; the raw token lives only in the verification link we email.
+model EmailVerificationToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// Single-use, short-lived token for resetting a forgotten password. Only the
+// SHA-256 hash is stored; the raw token lives only in the emailed reset link.
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// A merchant-declared bank account that settlements/withdrawals are paid out to.
+// One per organization. The full account number is encrypted at rest (AES-256-GCM,
+// like payment secrets); only the last four digits are kept in the clear for
+// display. This records where money should go — it does not move money itself.
+model PayoutAccount {
+  id                      String       @id @default(uuid())
+  organizationId          String       @unique
+  organization            Organization @relation(fields: [organizationId], references: [id])
+  bankCode                String
+  bankName                String
+  accountName             String
+  accountNumberCiphertext String
+  accountNumberLast4      String
+  currency                String       @default("NGN")
+  createdBy               String?
+  createdAt               DateTime     @default(now())
+  updatedAt               DateTime     @updatedAt
+}
+
+// One-time login code (6 digits). Only the SHA-256 hash is stored; the code is
+// sent to the user over email or WhatsApp. Single-use, short-lived, and
+// attempt-limited: too many wrong guesses locks the code.
+model OtpCode {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  channel   String // "email" | "whatsapp" — how the code was delivered
+  codeHash  String
+  expiresAt DateTime
+  attempts  Int       @default(0)
+  consumedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, createdAt])
 }
 
 // Transactional outbox. A domain event is written here in the SAME transaction
@@ -362,9 +450,41 @@ model Sale {
   createdAt      DateTime         @default(now())
   items          SaleItem[]
   allocations    SaleAllocation[]
+  refunds        Refund[]
 
   @@unique([organizationId, idempotencyKey])
   @@index([organizationId, createdAt])
+}
+
+// A full or partial reversal of a sale: restores stock (RETURN movements) and
+// reverses revenue/margin. The money-back at the provider is tracked, not run.
+model Refund {
+  id             String       @id @default(uuid())
+  saleId         String
+  sale           Sale         @relation(fields: [saleId], references: [id])
+  organizationId String
+  branchId       String?
+  amountMinor    BigInt // total refunded, integer minor units
+  marginReversed BigInt // margin reversed
+  reason         String?
+  createdBy      String?
+  createdAt      DateTime     @default(now())
+  items          RefundItem[]
+
+  @@index([organizationId, createdAt])
+  @@index([saleId])
+}
+
+model RefundItem {
+  id        String @id @default(uuid())
+  refundId  String
+  refund    Refund @relation(fields: [refundId], references: [id])
+  productId String
+  qty       Int
+  unitPrice Int // snapshot carried from the sale item
+  unitCost  Int
+
+  @@index([refundId])
 }
 
 model SaleItem {
