@@ -2,13 +2,26 @@ import { Module } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { NotificationDispatcher } from './notification-dispatcher';
 import { NotificationsController } from './notifications.controller';
+import { PushController } from './push.controller';
+import { PushSubscriptionService } from './push-subscription.service';
 import { SimulatedChannel } from './channels/simulated.channel';
 import { WhatsAppChannel } from './channels/whatsapp.channel';
 import { EmailChannel } from './channels/email.channel';
+import { WebPushChannel } from './channels/webpush.channel';
 
 @Module({
-    controllers: [NotificationsController],
-    providers: [NotificationService, NotificationDispatcher, SimulatedChannel, WhatsAppChannel, EmailChannel],
-    exports: [NotificationService, NotificationDispatcher], // the worker's outbox consumer uses the dispatcher
+    controllers: [NotificationsController, PushController],
+    providers: [
+        NotificationService,
+        NotificationDispatcher,
+        PushSubscriptionService,
+        SimulatedChannel,
+        WhatsAppChannel,
+        EmailChannel,
+        WebPushChannel,
+    ],
+    // the worker's outbox consumer uses the dispatcher; reports' weekly summary
+    // reuses the service + push subscriptions.
+    exports: [NotificationService, NotificationDispatcher, PushSubscriptionService],
 })
 export class NotificationsModule {}

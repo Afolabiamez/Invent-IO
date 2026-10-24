@@ -4,7 +4,9 @@ import type { ChannelName, MessageChannel } from './channels/message-channel';
 import { SimulatedChannel } from './channels/simulated.channel';
 import { WhatsAppChannel } from './channels/whatsapp.channel';
 import { EmailChannel } from './channels/email.channel';
+import { WebPushChannel } from './channels/webpush.channel';
 import { renderTemplate, type TemplateData } from './templates';
+import { resolveSender, senderForTemplate, type SenderKey } from './sender-identities';
 
 export interface SendNotification {
     organizationId: string;
@@ -14,6 +16,8 @@ export interface SendNotification {
     template: string;
     data?: TemplateData;
     eventId?: string | null;
+    /** Override the sender identity; by default it's derived from the template. */
+    from?: SenderKey;
 }
 
 export interface SendOutcome {
@@ -32,8 +36,9 @@ export class NotificationService {
         simulated: SimulatedChannel,
         whatsapp: WhatsAppChannel,
         email: EmailChannel,
+        webpush: WebPushChannel,
     ) {
-        this.channels = { simulated, whatsapp, email };
+        this.channels = { simulated, whatsapp, email, webpush };
     }
 
     /**
@@ -58,11 +63,14 @@ export class NotificationService {
         let status: 'SENT' | 'FAILED' = 'SENT';
         let providerMessageId: string | undefined;
         let error: string | undefined;
+        // The sender is attached to the email type (template) unless overridden.
+        const from = resolveSender(params.from ?? senderForTemplate(params.template));
         try {
             const result = await channel.send({
                 to: params.to,
                 subject: rendered.subject,
                 body: rendered.body,
+                from,
             });
             providerMessageId = result.providerMessageId;
         } catch (e) {

@@ -4,12 +4,18 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { RefreshTokenService } from "./refresh-token.service";
+import { EmailVerificationService } from "./email-verification.service";
+import { PasswordResetService } from "./password-reset.service";
+import { OtpService } from "./otp.service";
+import { AccountCredentialsService } from "./account-credentials.service";
+import { NotificationsModule } from "../notifications/notifications.module";
 import { PassportModule } from "@nestjs/passport";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 
 @Module({
     imports: [
         PassportModule,
+        NotificationsModule, // account emails go out through the notification channels
         JwtModule.registerAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
@@ -22,7 +28,7 @@ import { JwtStrategy } from "./strategies/jwt.strategy";
             })
         })
     ],
-    providers: [AuthService, RefreshTokenService, JwtStrategy],
+    providers: [AuthService, RefreshTokenService, EmailVerificationService, PasswordResetService, OtpService, AccountCredentialsService, JwtStrategy],
     controllers: [AuthController],
     exports: [AuthService],
 })
