@@ -39,6 +39,27 @@ const templates: Record<string, (d: TemplateData) => RenderedMessage> = {
             `Low/out of stock: ${Array.isArray(d.lowStock) ? d.lowStock.join(', ') : 'none'}.`,
     }),
     // 3. Account & auth
+    welcome: (d) => ({
+        subject: `Welcome to Invent-IO${d.businessName ? ', ' + d.businessName : ''}`,
+        body:
+            `Hi ${d.name ?? 'there'}, your Invent-IO account is ready. ` +
+            `Connect a payment account and add your products, and every payment that ` +
+            `lands turns into a confirmed sale in seconds. We're glad you're here.`,
+    }),
+    'verify-email': (d) => ({
+        subject: 'Confirm your email',
+        body:
+            `Welcome to Invent-IO${d.name ? ', ' + d.name : ''}! ` +
+            `Confirm your email address to secure your account: ${d.verifyUrl ?? ''}\n` +
+            `This link expires in 24 hours.`,
+    }),
+    'password.reset': (d) => ({
+        subject: 'Reset your password',
+        body:
+            `We received a request to reset your Invent-IO password. ` +
+            `Set a new one here: ${d.resetUrl ?? ''}\n` +
+            `This link expires in 1 hour. If you didn't ask for this, you can ignore this email.`,
+    }),
     'membership.invite': (d) => ({
         subject: `You've been invited to ${d.orgName ?? 'a team'}`,
         body: `You've been invited to ${d.orgName ?? 'a team'} as ${d.role ?? 'a member'}. Accept: ${d.inviteUrl ?? ''}`.trim(),
