@@ -2,12 +2,12 @@
   "name": "invent-io-frontend",
   "version": "0.1.0",
   "private": true,
-  "description": "Responsive Invent IO design preview with owner and staff flows",
+  "description": "Invent IO responsive web frontend with authenticated catalog import, push notifications and payment onboarding",
   "type": "module",
   "scripts": {
     "dev": "node scripts/serve.mjs",
     "start": "node scripts/serve.mjs",
-    "check": "node --check public/app.js && node --check public/data.js && node --check scripts/serve.mjs && node --check scripts/build.mjs && node --check public/model.js",
+    "check": "node --check public/app.js && node --check public/live-app.js && node --check public/api.js && node --check public/csv-import.js && node --check public/money.js && node --check public/notifications.js && node --check public/sw.js && node --check public/data.js && node --check public/model.js && node --check scripts/serve.mjs && node --check scripts/build.mjs",
     "build": "node scripts/build.mjs",
     "test": "node --test tests/*.test.mjs"
   },
