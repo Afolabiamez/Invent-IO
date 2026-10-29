@@ -1,3 +1,5 @@
+import { createLiveApp } from "./live-app.js";
+const isDemo = new URLSearchParams(location.search).get("demo") === "1";
 import { recordSale, voidSale, cancelWithdrawal } from "./model.js";
 import {
   readData,
@@ -72,6 +74,25 @@ const field = (n, l, v = "", t = "text", h = "", a = "") =>
     p.image
       ? `<img class="product-thumb" src="${esc(p.image)}" alt="${esc(p.name)}">`
       : `<span class="product-placeholder">${ico("package")}</span>`;
+const live = isDemo
+  ? null
+  : createLiveApp({
+      ui: {
+        esc,
+        btn,
+        link,
+        field,
+        notice,
+        empty,
+        ico,
+        brand,
+        go,
+        toast,
+        modal,
+        closeModal,
+      },
+      rerender: () => render(),
+    });
 function save() {
   if (!saveData(db))
     toast("Changes could not be saved in this browser. Keep this tab open.");
@@ -1107,6 +1128,13 @@ function render() {
   const [path, query] = location.hash.replace(/^#\/?/, "").split("?");
   route = path || "welcome";
   params = new URLSearchParams(query);
+  if (live) {
+    const html = live.render(route, params);
+    if (html !== null) {
+      $("#app").innerHTML = html;
+      return;
+    }
+  }
   let html;
   const routes = {
     welcome: landingScreen,
@@ -1196,7 +1224,7 @@ window.addEventListener("beforeunload", (e) => {
   }
 });
 window.addEventListener("storage", (e) => {
-  if (e.key === "invent-io-design-demo-v2") {
+  if (!live && e.key === "invent-io-design-demo-v2") {
     db = readData();
     if (!isOwner() && (!db.staff || !allowed("record"))) {
       closeModal();
@@ -1208,6 +1236,7 @@ window.addEventListener("storage", (e) => {
   }
 });
 document.addEventListener("click", async (e) => {
+  if (live) return;
   const scroll = e.target.closest("[data-scroll]");
   if (scroll) {
     e.preventDefault();
@@ -1716,6 +1745,7 @@ document.addEventListener("click", async (e) => {
   }
 });
 document.addEventListener("input", (e) => {
+  if (live) return;
   const input = e.target;
   if (input.id === "product-search") {
     search = input.value;
@@ -1765,6 +1795,7 @@ document.addEventListener("input", (e) => {
   }
 });
 document.addEventListener("change", async (e) => {
+  if (live) return;
   if (e.target.id !== "product-photo") return;
   const file = e.target.files?.[0];
   if (!file) return;
@@ -1784,6 +1815,7 @@ document.addEventListener("change", async (e) => {
   dirty = true;
 });
 document.addEventListener("submit", (e) => {
+  if (live) return;
   e.preventDefault();
   const f = e.target;
   if (!validate(f)) return;
