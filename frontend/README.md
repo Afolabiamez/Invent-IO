@@ -45,4 +45,3 @@ DIRECT setup has no exposed configuration endpoint in the current controllers. â
 `npm run check`, `npm test` (14 tests), `npm run build`, and `git diff --check`. Tests cover exact money, quoted CSV and validation, rotating-token concurrency, API errors, iPhone support, push subscription rollback, service worker title/body/click handling and fixed-origin proxy headers. Existing six local demo transition tests remain intact.
 
 `node tests/mock-server.mjs` starts an isolated UI fixture on http://localhost:4181. Its fake auth/catalog/provisioning responses never call an external service. Manually verified login, notification explanation/defer, CSV preview and partial import results, and automated onboarding returning a virtual-account status. Real push subscription/delivery and provider provisioning still require the deployed backend and a consenting test user.
-
