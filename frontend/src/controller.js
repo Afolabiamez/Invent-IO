@@ -1,4 +1,5 @@
 import { createViews } from "./views.jsx";
+import { rememberEmail } from "./authScreens.jsx";
 import { createApi } from "../public/api.js";
 import { createPush } from "../public/notifications.js";
 import { prepareImport, MAX_CSV_BYTES } from "../public/csv-import.js";
@@ -100,7 +101,7 @@ export function createMerchantController({ ui, rerender }) {
       prompting: false,
     });
   }
-  const {shell, auth, home, products, importScreen, editor, onboarding, managedForm,
+  const {shell, auth, checkEmail, verifyPending, home, products, importScreen, editor, onboarding, managedForm,
     direct, changePassword, verifyEmailScreen, account, admin, salesScreen, saleDetail,
     recordPayment, matchScreen} = createViews({state, api, push, can, person, ui,
       selectedItems, route: () => lastRoute, verify: async token => {
@@ -198,7 +199,7 @@ export function createMerchantController({ ui, rerender }) {
   function enter(route) {
     const previousRoute = lastRoute;
     lastRoute = route;
-    if (!api.session || ["welcome","login","create","forgot","reset","check","verify-email"].includes(route)) return;
+    if (!api.session || ["welcome","login","create","forgot","reset","check","verify-email","verify-pending"].includes(route)) return;
     if (!state.initialized && !state.loading && !state.error) { void initialize(); return; }
     if (previousRoute !== route && state.initialized && ["home","sales"].includes(route)) {
       void loadCore().then(rerender);
@@ -208,16 +209,8 @@ export function createMerchantController({ ui, rerender }) {
     if (route === "welcome") return null;
     if (["login", "create", "forgot", "reset"].includes(route))
       return auth(route);
-    if (route === "check")
-      return shell(
-        "Check your email",
-        empty(
-          "Check your email",
-          "If your email is registered, a reset link will be sent.",
-          link("Back to log in", "login", "primary"),
-        ),
-        { cls: "narrow" },
-      );
+    if (route === "check") return checkEmail();
+    if (route === "verify-pending") return api.session ? verifyPending() : auth("login");
     if (route === "verify-email") return verifyEmailScreen(params);
     if (!api.session) return auth("login");
     if (state.loading)
@@ -619,6 +612,7 @@ export function createMerchantController({ ui, rerender }) {
             body: { email: data.email },
             auth: false,
           });
+          rememberEmail("reset", data.email.trim());
           form.reset();
           go("check", true);
           return;
@@ -671,8 +665,9 @@ export function createMerchantController({ ui, rerender }) {
         state.prompting = false;
         state.loading = false;
         state.coreLoading = false;
-        go(kind === "create" ? "onboarding" : "home", true);
-        await initialize();
+        if (kind === "create") rememberEmail("verify", data.email.trim());
+        go(kind === "create" ? "verify-pending" : "home", true);
+        if (kind !== "create") await initialize();
         return;
       }
       if (form.id === "live-cash-payment") {

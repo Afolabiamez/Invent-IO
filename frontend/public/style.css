@@ -3113,3 +3113,32 @@ body:has(.back-office) .demo-banner + .back-office .admin-sidebar { top:30px; he
   .auth-forgot { align-self: center; }
   .auth-hint { color: var(--muted); }
 }
+
+/* Status / verification screens (Figma W-AU-07 · W-AU-08 · AU-04 check email) */
+.auth-intro { color: var(--muted); font-size: 16px; line-height: 24px; margin: 0; }
+.status-form .auth-title { font-size: 24px; line-height: 32px; font-weight: 700; margin: 0; }
+.status-block { display: flex; flex-direction: column; gap: 16px; }
+.status-block.mobile-only { display: none; }
+.status-block h2 { font-size: 24px; line-height: 32px; font-weight: 700; margin: 0; }
+.status-block p, .status-text { color: var(--muted); font-size: 16px; line-height: 24px; margin: 0; }
+.status-icon { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; background: #ececea; color: #44403c; }
+.status-icon.warn { background: #fee2e2; color: #991b1b; }
+.hint-text { color: var(--muted); font-size: 14px; line-height: 20px; margin: 0; }
+.recovery { display: flex; justify-content: flex-end; }
+.callout { display: flex; gap: 12px; align-items: flex-start; border: 1px solid; border-radius: 12px; padding: 12px 16px; }
+.callout svg { flex: none; margin-top: 2px; }
+.callout strong { display: block; font-size: 16px; line-height: 24px; font-weight: 600; color: #1c1917; }
+.callout p { margin: 0; font-size: 14px; line-height: 20px; color: #292524; }
+.callout.info { background: #eaf1ff; border-color: #b8cdf5; color: #1d4ed8; }
+.callout.success { background: #e8f5ee; border-color: #a8d5b8; color: #166534; }
+.callout.error { background: #fdecea; border-color: #f5b5ae; color: #b91c1c; }
+@media (max-width: 767px) {
+  .status-mobile-title { font-size: 24px; line-height: 32px; font-weight: 700; margin: 0; padding: 20px 16px 0; background: #f5f5f4; }
+  .status-block.mobile-only { display: flex; }
+  .status-form .status-block { align-items: center; text-align: center; gap: 8px; padding-top: 32px; }
+  .status-block h2 { font-size: 16px; line-height: 24px; font-weight: 600; }
+  .status-block .status-icon { width: 64px; height: 64px; border-radius: 50%; margin-bottom: 8px; }
+  .status-text { text-align: center; }
+  .recovery { justify-content: center; }
+  .auth-bottom .secondary, .auth-bottom .primary { width: 100%; }
+}

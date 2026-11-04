@@ -59,7 +59,7 @@ import {createFrontendServer} from '../scripts/serve.mjs';
  assert.equal(calls.filter(c=>c.path.endsWith('/change-password')).length,1);
  assert.equal(await page.evaluate(()=>sessionStorage.getItem('invent-api-session-v1')),null);
  await page.goto('http://127.0.0.1:4181/#/create');
- await page.fill('input[name=name]','Test Owner');await page.fill('input[name=businessName]','Store');await page.fill('input[name=email]','new@example.test');await page.fill('input[name=password]','new-password');await page.click('#live-auth button[type=submit]');await page.waitForURL('**/#/onboarding');
+ await page.fill('input[name=name]','Test Owner');await page.fill('input[name=businessName]','Store');await page.fill('input[name=email]','new@example.test');await page.fill('input[name=password]','new-password');await page.click('#live-auth button[type=submit]');await page.waitForURL('**/#/verify-pending');await page.getByText('new@example.test').first().waitFor();
  assert(!('confirm' in calls.find(c=>c.path.endsWith('/auth/register')).body));
  await page.goto('http://127.0.0.1:4181/reset-password?token=test-reset');await page.waitForURL('**/#/reset?token=test-reset');
  await page.fill('input[name=password]','reset-password');await page.fill('input[name=confirm]','reset-password');await page.click('#live-auth button[type=submit]');await page.waitForURL('**/#/login');
