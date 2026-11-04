@@ -3198,3 +3198,23 @@ body:has(.back-office) .demo-banner + .back-office .admin-sidebar { top:30px; he
   .sale-rows .pay-row > :nth-child(4) { grid-column: 2; grid-row: 1; }
   .chip-gap { flex-basis: 100%; height: 0; }
 }
+
+/* Products matched to Figma W-PR-01 / W-PR-03 */
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-bottom: 24px; }
+.add-product { display: inline-flex; align-items: center; min-height: 52px; padding: 0 24px; border-radius: 12px; text-decoration: none; }
+.prod-table .pay-row { grid-template-columns: 1fr 150px 150px 180px; }
+.prod-table .num { text-align: right; padding-right: 16px; }
+.prod-name { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.prod-name strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.form880 { max-width: 880px; }
+.prod-form { display: grid; gap: 16px; }
+.prod-form .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+.form-actions { display: flex; justify-content: flex-end; gap: 12px; padding-top: 8px; }
+@media (max-width: 767px) {
+  .prod-table .pay-row { grid-template-columns: 1fr auto; }
+  .prod-table .pay-row > :nth-child(3), .prod-table .pay-row > :nth-child(4) { display: none; }
+  .prod-table .num { padding-right: 0; }
+  .prod-form .pair { grid-template-columns: 1fr; }
+  .form-actions { flex-direction: column-reverse; }
+  .add-product { min-height: 44px; padding: 0 16px; }
+}
