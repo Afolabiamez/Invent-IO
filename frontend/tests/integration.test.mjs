@@ -255,3 +255,35 @@ test("fixed-origin proxy forwards auth/JSON, omits cookies, and serves a non-cac
     await new Promise((r) => server.close(r));
   }
 });
+
+test('failed login never creates a session; successful login uses the real auth contract', async () => {
+  const storage = store();
+  const requests = [];
+  const api = createApi({storage,fetcher:async (url, options) => {
+    const body = JSON.parse(options.body);
+    requests.push({url,body,headers:options.headers});
+    return body.password === 'incorrect' ? json({message:'Invalid credentials'},401) : json({accessToken:'access',refreshToken:'refresh',userId:'u1'});
+  }});
+  await assert.rejects(api.authenticate('login',{email:'test@example.test',password:'incorrect'}),/Invalid credentials/);
+  assert.equal(api.session,null);
+  assert.equal(storage.getItem('invent-api-session-v1'),null);
+  await api.authenticate('login',{email:'test@example.test',password:'correct'});
+  assert.equal(requests[1].url,'/api/v1/auth/login');
+  assert.equal(requests[1].headers.Authorization,undefined);
+  assert.equal(api.session.accessToken,'access');
+  assert.equal(JSON.stringify(api.session).includes('correct'),false);
+});
+
+test('email lifecycle links preserve tokens and route into the frontend without calling an API', async () => {
+  const server=createFrontendServer({fetcher:()=>{throw new Error('Unexpected API call');}});
+  await new Promise(r=>server.listen(0,'127.0.0.1',r));
+  const origin='http://127.0.0.1:'+server.address().port;
+  try {
+    for (const [path,route] of [['reset-password','reset'],['verify-email','verify-email']]) {
+      const response=await fetch(origin+'/'+path+'?token=opaque%2Btoken',{redirect:'manual'});
+      assert.equal(response.status,302);
+      assert.equal(response.headers.get('location'),'/#/'+route+'?token=opaque%2Btoken');
+      assert.equal(response.headers.get('cache-control'),'no-store');
+    }
+  } finally {await new Promise(r=>server.close(r));}
+});

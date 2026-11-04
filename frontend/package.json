@@ -1,17 +1,26 @@
 {
   "name": "invent-io-frontend",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "private": true,
-  "description": "Invent IO responsive web frontend with authenticated catalog import, push notifications and payment onboarding",
+  "description": "Invent IO React merchant frontend with authenticated API flows",
   "type": "module",
   "scripts": {
-    "dev": "node scripts/serve.mjs",
+    "dev": "npm run build && node scripts/serve.mjs",
     "start": "node scripts/serve.mjs",
-    "check": "node --check public/app.js && node --check public/live-app.js && node --check public/api.js && node --check public/csv-import.js && node --check public/money.js && node --check public/notifications.js && node --check public/sw.js && node --check public/data.js && node --check public/model.js && node --check scripts/serve.mjs && node --check scripts/build.mjs",
     "build": "node scripts/build.mjs",
-    "test": "node --test tests/*.test.mjs"
+    "check": "node --check src/controller.js && node --check public/api.js && node --check public/csv-import.js && node --check public/money.js && node --check public/notifications.js && node --check public/sw.js && node --check scripts/serve.mjs && node --check scripts/build.mjs",
+    "test": "node --test tests/integration.test.mjs",
+    "test:ui": "node tests/react-ui-smoke.mjs"
   },
   "engines": {
     "node": ">=22"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "playwright": "^1.64.1"
+  },
+  "dependencies": {
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   }
 }
