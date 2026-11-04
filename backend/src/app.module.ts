@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { PrismaModule } from './prisma/prisma.modules';
-import { AuthModule } from './auth/auth.module'
+import { AuthModule } from './auth/auth.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TenancyModule } from './tenancy/tenancy.module';
@@ -26,7 +26,7 @@ import { ReportsModule } from './reports/reports.module';
     }),
     ThrottlerModule.forRoot([
       {
-        ttl: 60_000,
+        ttl: 60000,
         limit: 100,
       },
     ]),
