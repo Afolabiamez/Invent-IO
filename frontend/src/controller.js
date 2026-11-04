@@ -381,7 +381,7 @@ export function createMerchantController({ ui, rerender }) {
   }
   function setError(form, error) {
     const target = $("#live-error", form) || $("#import-error");
-    if (target) target.textContent = message(error);
+    if (target) target.textContent = form.dataset?.kind === "login" && error?.status === 401 ? "Email or password is incorrect. Check them and try again." : message(error);
     else notifyError(error);
   }
   async function busy(form, work) {
@@ -613,12 +613,6 @@ export function createMerchantController({ ui, rerender }) {
     await busy(form, async () => {
       if (form.id === "live-auth") {
         const kind = form.dataset.kind;
-        if (kind === "create" && data.password !== data.confirm) {
-          const target = form.querySelector('[data-error="confirm"]');
-          if (target) target.textContent = "Passwords don’t match.";
-          form.elements.confirm.focus();
-          return;
-        }
         if (kind === "forgot") {
           await api.request("/auth/forgot-password", {
             method: "POST",
