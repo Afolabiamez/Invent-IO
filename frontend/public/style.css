@@ -3108,10 +3108,20 @@ body:has(.back-office) .demo-banner + .back-office .admin-sidebar { top:30px; he
   .auth-hint { color: var(--muted); font-size: 12px; line-height: 16px; margin: 0; }
   .auth-bottom { gap: 8px; padding-top: 8px; }
 }
+.pw-row { display: none; }
 @media (max-width: 767px) {
-  .auth-form-brand { display: none; }
-  .auth-forgot { align-self: center; }
+  .auth-form-brand { display: flex; }
+  .auth-form .auth-forgot { display: none; }
   .auth-hint { color: var(--muted); }
+  /* Figma mobile: text "Show password" link under the field, Forgot on the same row (login) */
+  .eye-btn { display: none; }
+  .password-wrap input { padding-right: 16px; }
+  .pw-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 52px; margin-top: 12px; }
+  .pw-row { padding: 0 20px; }
+  .pw-row .text-btn { padding: 0; min-width: 0; width: auto; white-space: nowrap; flex: none; }
+  .auth-heading { display: block; }
+  .auth-heading h1 { display: none; }
+  .auth-heading p { color: var(--muted); font-size: 16px; line-height: 24px; margin: 0; }
 }
 
 /* Status / verification screens (Figma W-AU-07 · W-AU-08 · AU-04 check email) */
