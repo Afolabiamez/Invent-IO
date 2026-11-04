@@ -107,7 +107,7 @@ export function createMerchantController({ ui, rerender }) {
     });
   }
   const {shell, auth, checkEmail, verifyPending, home, products, importScreen, editor, onboarding, managedForm,
-    direct, changePassword, verifyEmailScreen, account, notificationSettings, admin, salesScreen, saleDetail,
+    direct, changePassword, verifyEmailScreen, account, notificationSettings, moreScreen, admin, salesScreen, saleDetail,
     recordPayment, matchScreen} = createViews({state, api, push, can, person, ui,
       selectedItems, route: () => lastRoute, verify: async token => {
         await api.request("/auth/verify-email", {method:"POST",body:{token},auth:false});
@@ -245,7 +245,7 @@ export function createMerchantController({ ui, rerender }) {
       "change-password": changePassword,
       "verify-email": verifyEmailScreen,
       settings: account,
-      more: account,
+      more: moreScreen,
       "notification-settings": notificationSettings,
       "product-new": () => editor(),
       "product-edit": () => editor(params.get("id")),
