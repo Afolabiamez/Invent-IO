@@ -23,6 +23,8 @@ export function createMerchantController({ ui, rerender }) {
   const $ = (s, r = document) => r.querySelector(s);
   const state = {
     search: "",
+    productFilter: "all",
+    formNonce: 0,
     salesTab: "pending",
     salesSort: "oldest",
     salesRange: "today",
@@ -715,6 +717,12 @@ export function createMerchantController({ ui, rerender }) {
           { method: form.dataset.id ? "PATCH" : "POST", body: payload },
         );
         await loadProducts();
+        if (event.submitter?.dataset?.again && !form.dataset.id) {
+          state.formNonce++;
+          rerender();
+          toast("Product saved. Add the next one.");
+          return;
+        }
         go("products", true);
         toast("Product saved");
         return;
