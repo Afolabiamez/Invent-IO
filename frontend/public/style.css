@@ -3229,3 +3229,37 @@ body:has(.back-office) .demo-banner + .back-office .admin-sidebar { top:30px; he
 .acct-note { font-size: 12px; margin: 16px 0 0; }
 .acct-actions { display: flex; justify-content: flex-end; padding-top: 24px; }
 .acct-logout { display: inline-flex; align-items: center; gap: 8px; }
+
+/* Phone layouts matched to Figma mobile frames */
+.t-mob, .mob-back, .add-mobile, .prod-sub { display: none; }
+.prod-text { display: flex; flex-direction: column; min-width: 0; }
+@media (max-width: 767px) {
+  .t-desk { display: none; }
+  .t-mob { display: inline; }
+  .mob-back { display: inline-flex; margin-left: -12px; }
+  .topbar .add-product { display: none; }
+  .add-mobile { display: flex; width: 100%; justify-content: center; align-items: center; min-height: 52px; border-radius: 12px; text-decoration: none; order: 2; }
+  .toolbar { gap: 12px; }
+  .toolbar .search { width: 100%; order: 1; }
+  .toolbar .chip-row { order: 3; }
+  .toolbar .chip-gap, .toolbar > .secondary:not(.add-mobile) { display: none; }
+  .prod-sub { display: block; color: var(--muted); font-size: 14px; line-height: 20px; }
+  .prod-table .pay-row > .num { display: none; }
+  .prod-table .pay-row { grid-template-columns: 1fr auto; padding: 12px 16px; }
+  .prod-table .pay-row > :nth-child(4) { display: none; }
+  .prod-table .pay-row::after { content: ""; width: 8px; height: 8px; border-top: 1.5px solid var(--muted); border-right: 1.5px solid var(--muted); transform: rotate(45deg); justify-self: end; grid-column: 2; grid-row: 1; }
+  .sales-table .pay-row { position: relative; }
+  .sales-table .pay-cta { position: absolute; inset: 0; width: 100%; margin: 0; opacity: 0; }
+  .sales-table .pay-row::after { content: ""; position: absolute; right: 20px; top: 50%; width: 8px; height: 8px; border-top: 1.5px solid var(--muted); border-right: 1.5px solid var(--muted); transform: translateY(-50%) rotate(45deg); }
+  .acct-card { background: none; border: 0; padding: 0; box-shadow: none; display: flex; flex-direction: column; min-height: calc(100dvh - 140px); }
+  .acct-card > .acct-row:not(.acct-link) { background: #fff; border: 0; border-bottom: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; padding: 12px 16px; }
+  .acct-note { margin-top: 4px; }
+  .acct-actions { margin-top: auto; justify-content: center; padding-top: 24px; }
+  .acct-card:has(.acct-link:not(:last-child)) > .acct-link[href="#/notification-settings"]:first-of-type { }
+}
+@media (max-width: 767px) { .acct-card > .acct-link { background: #fff; border-radius: 8px; margin-bottom: 12px; border: 0; padding: 12px 16px; } }
+
+@media (max-width: 767px) {
+  .acct-notif { display: none !important; }
+  .sales-table .pay-row > :nth-child(4) { display: none; }
+}
