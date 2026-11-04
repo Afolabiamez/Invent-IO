@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { resolve, relative, isAbsolute, extname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root = fileURLToPath(new URL("../public/", import.meta.url));
+const defaultRoot = fileURLToPath(new URL("../dist/", import.meta.url));
 const types = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -14,10 +14,12 @@ const types = {
   ".webmanifest": "application/manifest+json",
 };
 export function createFrontendServer({
+  staticRoot = defaultRoot,
   apiOrigin = process.env.API_ORIGIN ||
     "https://invent-io-backend-production.up.railway.app",
   fetcher = fetch,
 } = {}) {
+  const root = staticRoot;
   const upstream = new URL(apiOrigin);
   if (
     upstream.protocol !== "https:" &&
@@ -27,6 +29,12 @@ export function createFrontendServer({
   return createServer(async (request, response) => {
     try {
       const url = new URL(request.url, "http://localhost");
+      // Lifecycle emails use real URL paths; the application uses hash routes.
+      const emailRoutes = { '/reset-password': 'reset', '/verify-email': 'verify-email' };
+      if (emailRoutes[url.pathname] && ['GET', 'HEAD'].includes(request.method)) {
+        response.writeHead(302, { Location: '/#/' + emailRoutes[url.pathname] + url.search, 'Cache-Control': 'no-store' });
+        return response.end();
+      }
       if (url.pathname.startsWith("/api/v1/")) {
         if (
           !["GET", "POST", "PATCH", "DELETE", "PUT"].includes(request.method)
