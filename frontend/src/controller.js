@@ -23,6 +23,9 @@ export function createMerchantController({ ui, rerender }) {
   const $ = (s, r = document) => r.querySelector(s);
   const state = {
     search: "",
+    salesTab: "pending",
+    salesSort: "oldest",
+    salesRange: "today",
     payments: [],
     sales: [],
     summary: null,
@@ -451,6 +454,11 @@ export function createMerchantController({ ui, rerender }) {
     try {
       if (action === "refresh-core") {
         await loadCore();
+        rerender();
+        return;
+      }
+      if (action === "set-ui") {
+        state[b.dataset.key] = b.dataset.value;
         rerender();
         return;
       }
