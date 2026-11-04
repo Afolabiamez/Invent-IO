@@ -63,3 +63,12 @@
  .landing-design [data-node-id="I694:15;243:68"],.landing-design [data-node-id="I694:23;243:8"] {font-size:14px}
 }
 .landing-design h1,.landing-design h2 {margin:0}
+
+/* Figma sets this sentence on two lines; the browser measures its second line 0.7px wider than the 334px column. */
+[data-node-id="694:368"] { letter-spacing: -0.02px; }
+
+/* At the 1440 design width the sections are fixed-height frames in Figma; sub-pixel text metrics made them 0.3-0.6px taller. */
+@media (min-width: 1251px) {
+  .landing-design [data-node-id="694:31"] { height: 625px; min-height: 0; overflow: hidden; }
+  .landing-design [data-node-id="694:105"] { height: 707px; overflow: hidden; }
+}

@@ -55,7 +55,7 @@ export default function HowItWorks() {
           <div className="lp-5d4fd10233" data-node-id="694:115" data-name="Demo">
             <div className="lp-dd4ac449dd" data-node-id="694:130" data-name="Card/Payment">
               <div className="lp-fde65e4dd4" data-node-id="I694:130;245:199" data-name="Top">
-                <p className="lp-467fe204e2" data-node-id="I694:130;245:200">Amount received</p>
+                <p className="lp-467fe204e2" data-node-id="I694:130;245:200">—</p>
                 <div className="lp-e22b6e7081" data-node-id="I694:130;245:201" data-annotations="Copy pending S8 (glossary): status “Waiting” vs PRD Pending/Matched" data-name="Status">
                   <div className="lp-1b96182588" data-node-id="I694:130;245:201;244:14" data-name="Icon">
                     <img alt="" className="lp-e71beb8cb4" src={imgIcon1} />
