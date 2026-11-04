@@ -3218,3 +3218,14 @@ body:has(.back-office) .demo-banner + .back-office .admin-sidebar { top:30px; he
   .form-actions { flex-direction: column-reverse; }
   .add-product { min-height: 44px; padding: 0 16px; }
 }
+
+/* Account matched to Figma W-MO-06 */
+.acct-card { padding: 8px 24px 24px; }
+.acct-row { display: flex; flex-direction: column; gap: 2px; padding: 20px 16px; border-bottom: 1px solid var(--border); }
+.acct-label { color: var(--muted); font-size: 14px; line-height: 20px; }
+.acct-row strong { font-weight: 600; font-size: 16px; line-height: 24px; }
+.acct-link { flex-direction: row; align-items: center; justify-content: space-between; text-decoration: none; color: inherit; }
+.acct-link > span { display: flex; flex-direction: column; gap: 2px; }
+.acct-note { font-size: 12px; margin: 16px 0 0; }
+.acct-actions { display: flex; justify-content: flex-end; padding-top: 24px; }
+.acct-logout { display: inline-flex; align-items: center; gap: 8px; }
