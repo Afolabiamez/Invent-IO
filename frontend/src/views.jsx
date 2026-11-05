@@ -1314,11 +1314,41 @@ export function createViews({
           <span>
             <strong>Notifications</strong>
             <span className="acct-label">
-              Browser alerts for payments and stock
+              {role === "Staff" ? "Browser alerts when stock runs low" : "Browser alerts for payments and stock"}
             </span>
           </span>
           {ico("caret")}
         </a>
+        {role === "Staff" && (() => {
+          const ok = (p) => can(p) || can("catalog.write") && p === "catalog.read";
+          const groups = [
+            ["Sales", [["Record sales", "sales.allocate"]]],
+            ["Stock", [["View inventory (no cost prices)", "catalog.read"], ["Update stock", "stock.adjust"]]],
+            ["Products & prices", [["Add products", "catalog.write"], ["Edit products", "catalog.write"], ["Change selling price", "catalog.write"], ["Change cost price", "catalog.write"], ["Change low-stock alert", "catalog.write"]]],
+            ["Staff management", [["Invite, remove or manage Staff \u2014 owner only", "payments.manage"]]],
+          ];
+          return (
+            <div className="can-do">
+              <h2 className="acct-title">What you can do</h2>
+              {groups.map(([g, items]) => (
+                <div key={g}>
+                  <p className="overline">{g}</p>
+                  {items.map(([label, perm]) => {
+                    const yes = ok(perm);
+                    return (
+                      <div key={label} className={"can-row" + (yes ? " yes" : "")}>
+                        <span aria-hidden="true">{yes ? ico("check") : ico("prohibit")}</span>
+                        <span className="grow">{label}</span>
+                        <span className="caption">{yes ? "Yes" : "No"}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+              {notice(<><strong>Need more access?</strong><br />Only your owner can change what you can do. Ask them — they can turn it on in Team.</>, "info")}
+            </div>
+          );
+        })()}
         <p className="caption muted acct-note">
           To change your password, use “Forgot password” on the log-in screen.
         </p>
