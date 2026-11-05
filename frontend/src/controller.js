@@ -132,6 +132,7 @@ export function createMerchantController({ ui, rerender }) {
     recordPayment,
     weeklySummary,
     subscription,
+    plans,
     wallet,
     connectPaystack,
     withdrawalAccount,
@@ -294,7 +295,7 @@ export function createMerchantController({ ui, rerender }) {
     if (renderRoute !== route) state.notifOpen = false;
     renderRoute = route;
     if (route === "welcome") return null;
-    if (["login", "create", "forgot", "reset"].includes(route))
+    if (["login", "create", "join", "forgot", "reset"].includes(route))
       return auth(route);
     if (route === "check") return checkEmail();
     if (route === "verify-pending")
@@ -317,6 +318,7 @@ export function createMerchantController({ ui, rerender }) {
       team,
       "invite-staff": inviteStaff,
       subscription,
+      plans,
       wallet,
       "connect-paystack": connectPaystack,
       "withdrawal-account": withdrawalAccount,
@@ -582,6 +584,11 @@ export function createMerchantController({ ui, rerender }) {
         go("business-settings");
         return;
       }
+      if (action === "plan-monthly" || action === "plan-yearly") {
+        state.planYearly = action === "plan-yearly";
+        rerender();
+        return;
+      }
       if (action === "plans-unavailable") {
         toast("Plans aren’t available yet.");
         return;
@@ -695,7 +702,7 @@ export function createMerchantController({ ui, rerender }) {
           state.initialized = false;
           state.enabled = false;
           closeModal();
-          go("login", true);
+          go(b.dataset.after || "login", true);
         }
         return;
       }
@@ -798,6 +805,8 @@ export function createMerchantController({ ui, rerender }) {
           toast("Password updated. Log in with your new password.");
           return;
         }
+        if (kind === "join")
+          throw new Error("Joining a team isn’t available yet. Ask your owner to try again later.");
         await push.disable().catch(() => {});
         const payload =
           kind === "create"

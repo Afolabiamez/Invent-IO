@@ -60,7 +60,7 @@ export function VerifyPending({api, state: initial = ''}) {
     <p className="status-text">{`We sent a verification link to ${to}. Open ${email ? 'the link' : 'it'} to verify your email and finish creating your account.`}</p>
     <Callout tone="info" title="Verification is required">You can’t continue setting up until your email is verified.</Callout>
     <p className="hint-text desktop-only">Didn’t get the email? Check your spam folder, or send it again.</p>
-    <div className="auth-bottom"><button type="button" className="secondary" onClick={resend} disabled={state === 'sending'}>{state === 'sending' ? 'Sending…' : state === 'failed' ? 'Try again' : 'Resend email'}</button><div className="recovery"><button type="button" className="text-btn" data-live="logout">Back to log in</button></div></div>
+    <div className="auth-bottom"><button type="button" className="secondary" onClick={resend} disabled={state === 'sending'}>{state === 'sending' ? 'Sending…' : state === 'failed' ? 'Try again' : 'Resend email'}</button><div className="recovery"><button type="button" className="text-btn" data-live="logout" data-after="create">Change email</button><button type="button" className="text-btn" data-live="logout">Back to log in</button></div></div>
   </AuthFrame>;
 }
 

@@ -83,6 +83,7 @@ export function createViews({
       {
         wallet: "home",
         subscription: "business-settings",
+        plans: "business-settings",
         "withdrawal-account": "business-settings",
         "connect-paystack": "business-settings",
         "invite-staff": "team",
@@ -268,6 +269,7 @@ export function createViews({
   function auth(kind) {
     const title = {
       create: "Create account",
+      join: "Join your team",
       forgot: "Reset password",
       reset: "Set new password",
       login: "Log in",
@@ -275,6 +277,7 @@ export function createViews({
     const subtitle = {
       create:
         "Set up your Invent IO account. You\u2019ll be the owner of your business.",
+      join: "Create your account to join the team you were invited to.",
       forgot: "",
       reset: "",
       login: "",
@@ -353,7 +356,12 @@ export function createViews({
               </div>
             )}
             {intro && <p className="auth-intro">{intro}</p>}
-            {kind === "create" &&
+            {kind === "join" &&
+              notice(
+                "You can record sales and view inventory to start. Your owner can change this later.",
+                "info",
+              )}
+            {(kind === "create" || kind === "join") &&
               field(
                 "name",
                 "Your name",
@@ -372,10 +380,12 @@ export function createViews({
                 'required autocomplete="username"',
               )}
 
-             {kind==='create' && field('phone','Phone (optional)','','tel','','autocomplete="tel"')} 
+             {(kind==='create'||kind==='join') && field('phone','Phone (optional)','','tel','','autocomplete="tel"')} 
             {password}
             {kind === "create" &&
               link("Forgot password?", "forgot", "text-btn auth-forgot")}
+            {kind === "join" &&
+              link("Already have an account? Log in to accept", "login", "text-btn auth-forgot")}
             {kind === "create" &&
               field(
                 "businessName",
@@ -1955,8 +1965,8 @@ function setupDone() {
           {bar("Staff", 1, 1)}
           {bar("Products", n, 10)}
         </div>
-        {notice(<><strong>Try Pro free for 7 days</strong><br />Up to 5 staff and unlimited products. No card needed. You can try it once.<br /><button type="button" className="text-btn" data-live="plans-unavailable">Start free trial</button></>, "info")}
-        <div className="form-actions"><button className="primary" type="button" data-live="plans-unavailable">See plans</button></div>
+        {notice(<><strong>Try Pro free for 7 days</strong><br />Up to 5 staff and unlimited products. No card needed. You can try it once.<br /><button type="button" className="text-btn" data-live="go" data-to="plans">Start free trial</button></>, "info")}
+        <div className="form-actions"><button className="primary" type="button" data-live="go" data-to="plans">See plans</button></div>
       </div>,
       { back: "business-settings", cls: "narrow" },
     );
@@ -2097,6 +2107,34 @@ function setupDone() {
     );
   }
 
+  function plans() {
+    const yearly = state.planYearly;
+    return ownerOnly(
+      "Plans",
+      <div className="card pad stack">
+        <div className="chip-row">
+          <button type="button" className={"chip" + (!yearly ? " selected" : "")} data-live="plan-monthly">{!yearly ? "\u2713 " : ""}Monthly</button>
+          <button type="button" className={"chip" + (yearly ? " selected" : "")} data-live="plan-yearly">{yearly ? "\u2713 " : ""}Yearly · 2 months free</button>
+        </div>
+        <div className="card pad-sm stack-sm">
+          <div className="kv-row nob"><strong>Free</strong><strong>{"\u20A6"}0</strong></div>
+          <span className="caption muted">1 staff · 10 products</span>
+        </div>
+        <div className="card pad-sm stack-sm plan-pro">
+          <div className="kv-row nob"><strong>Pro <span className="plan-tag">7-day free trial</span></strong><strong>{"\u2014"}</strong></div>
+          <span className="caption muted">{yearly ? "a year" : "a month"}</span>
+          <span className="caption muted">5 staff · unlimited products</span>
+        </div>
+        <button type="button" className="list-link card" data-live="plans-unavailable">
+          <div className="grow"><strong>Subscribe now</strong><p>Pay on Paystack’s secure page. Cancel any time.</p></div>
+          {ico("caret")}
+        </button>
+        <div className="form-actions"><button className="primary" type="button" data-live="plans-unavailable">Start 7-day free trial</button></div>
+      </div>,
+      { back: "subscription", cls: "narrow" },
+    );
+  }
+
   function businessSettings() {
     const biz = state.tenant?.businessName || api.session?.businessName || "";
     return ownerOnly(
@@ -2146,6 +2184,7 @@ function setupDone() {
   return {
     weeklySummary,
     subscription,
+    plans,
     wallet,
     connectPaystack,
     withdrawalAccount,
