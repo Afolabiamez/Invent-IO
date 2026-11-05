@@ -1314,11 +1314,41 @@ export function createViews({
           <span>
             <strong>Notifications</strong>
             <span className="acct-label">
-              Browser alerts for payments and stock
+              {role === "Staff" ? "Browser alerts when stock runs low" : "Browser alerts for payments and stock"}
             </span>
           </span>
           {ico("caret")}
         </a>
+        {role === "Staff" && (() => {
+          const ok = (p) => can(p) || can("catalog.write") && p === "catalog.read";
+          const groups = [
+            ["Sales", [["Record sales", "sales.allocate"]]],
+            ["Stock", [["View inventory (no cost prices)", "catalog.read"], ["Update stock", "stock.adjust"]]],
+            ["Products & prices", [["Add products", "catalog.write"], ["Edit products", "catalog.write"], ["Change selling price", "catalog.write"], ["Change cost price", "catalog.write"], ["Change low-stock alert", "catalog.write"]]],
+            ["Staff management", [["Invite, remove or manage Staff \u2014 owner only", "payments.manage"]]],
+          ];
+          return (
+            <div className="can-do">
+              <h2 className="acct-title">What you can do</h2>
+              {groups.map(([g, items]) => (
+                <div key={g}>
+                  <p className="overline">{g}</p>
+                  {items.map(([label, perm]) => {
+                    const yes = ok(perm);
+                    return (
+                      <div key={label} className={"can-row" + (yes ? " yes" : "")}>
+                        <span aria-hidden="true">{yes ? ico("check") : ico("prohibit")}</span>
+                        <span className="grow">{label}</span>
+                        <span className="caption">{yes ? "Yes" : "No"}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+              {notice(<><strong>Need more access?</strong><br />Only your owner can change what you can do. Ask them — they can turn it on in Team.</>, "info")}
+            </div>
+          );
+        })()}
         <p className="caption muted acct-note">
           To change your password, use “Forgot password” on the log-in screen.
         </p>
@@ -2101,7 +2131,7 @@ function setupDone() {
                 <span key={t} className={"chip" + (i === 0 ? " selected" : "")}>{i === 0 ? "\u2713 " : ""}{t}</span>
               ))}
             </div>
-            {empty("No transactions yet", "Customer payments and withdrawals will show here.")}
+            {empty("No money in your Wallet yet", "Your Wallet fills up when customers pay you through Invent IO by transfer or card. Cash sales don’t appear here.")}
           </section>
         </div>
         <p className="sim-tag">{ico("info")} Simulated · test mode, no real money moves</p>
@@ -2168,8 +2198,10 @@ function setupDone() {
           <Callout tone="info" title="Keep this key private">It’s stored encrypted. After you save it, Invent IO only shows the last 3 characters. Only you, the owner, can change it.</Callout>
           <p className="form-error" id="live-error" role="alert" />
           <div className="auth-bottom">
-            <button className="primary" type="submit">{replace ? "Save key" : "Check key"}</button>
-            {link(replace ? "Cancel" : "Do this later", replace ? "paystack" : "business-settings")}
+            <button className="primary" type="submit">{replace ? "Save new key" : "Check key"}</button>
+            {replace
+              ? <a className="secondary" href="#/paystack">Cancel</a>
+              : link("Do this later", "business-settings")}
           </div>
         </form>
       </>}
@@ -2457,13 +2489,15 @@ function setupDone() {
         <p className="step-label">INTEGRATIONS</p>
         <div className="card">
           <div className="kv"><span>WhatsApp summary</span><strong>Sandbox</strong></div>
-          <div className="kv"><span>Paystack · set up by Invent IO</span><strong>Sandbox</strong></div>
+          <a className="list-link" href={state.psKey ? "#/paystack" : "#/connect-paystack"}>
+            <div className="grow">
+              <strong>{state.psKey ? "Paystack · your account" : "Set up payments"}</strong>
+              <p>{state.psKey ? "Connected · key ending " + state.psKey : "Not set up · cash and transfers only"}</p>
+            </div>
+            {ico("caret")}
+          </a>
         </div>
         <p className="step-label">PAYMENTS</p>
-        <a className="list-link card" href="#/paystack">
-          <div className="grow"><strong>Paystack</strong><p>Connection, secret key and webhook</p></div>
-          {ico("caret")}
-        </a>
         <a className="list-link card" href="#/onboarding">
           <div className="grow"><strong>Payment setup</strong><p>Choose how customers pay you</p></div>
           {ico("caret")}

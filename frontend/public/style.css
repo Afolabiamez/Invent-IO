@@ -3386,3 +3386,12 @@ button.list-link{width:100%;text-align:left;background:transparent;border:0}
 .acct-head .text-btn{display:inline-flex;align-items:center;gap:6px}
 .acct-name{display:flex;flex-direction:column;align-items:stretch;gap:8px}
 .acct-name .form-actions{display:flex;gap:12px;justify-content:flex-end}
+.can-do{display:flex;flex-direction:column;gap:4px;padding:16px 0 8px}
+.can-do .overline{font-size:12px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:#57534e;margin:12px 0 2px}
+.can-row{display:flex;align-items:center;gap:12px;padding:8px 0;color:#57534e}
+.can-row .caption{color:#78716c}
+.can-row.yes{color:#1c1917}
+.can-row.yes .caption{color:#18663a}
+.can-row .icon img{width:24px;height:24px}
+.can-do .notice{margin-top:12px}
+a.secondary{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 24px;border:1px solid #d0d5dd;border-radius:12px;font-weight:600;color:#1c1917;text-decoration:none;background:#fff}
