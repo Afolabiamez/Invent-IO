@@ -47,15 +47,50 @@ export function createViews({
       ...(can("sales.allocate") ? [["sales", "Sales", "navSales"]] : []),
       ...(can("catalog.read") ? [["products", "Products", "navProducts"]] : []),
     ];
+    const unread = state.notifRead ? 0 : state.payments.length;
+    const notifPanel = () => (
+      <div className="notif-panel" role="dialog" aria-label="Notifications">
+        <div className="notif-head">
+          <strong>Notifications</strong>
+          <button type="button" className="text-btn" data-live="notifs-read">Mark all as read</button>
+          <a href="#/notification-settings" aria-label="Notification settings">{ico("navSettings")}</a>
+        </div>
+        {state.payments.length ? (
+          state.payments.slice(0, 5).map((p) => (
+            <a key={p.id} className={"notif-item" + (unread ? " unread" : "")} href="#/sales">
+              <span className="po-icon">{ico("cash")}</span>
+              <span className="po-text">
+                <strong>{formatMinor(p.amountMinor)} payment received</strong>
+                <small>Not matched to a sale yet. Record what was sold.</small>
+              </span>
+              {unread > 0 && <span className="notif-dot" />}
+            </a>
+          ))
+        ) : (
+          <p className="notif-empty">You’re all caught up. New payments and low stock alerts will show here.</p>
+        )}
+      </div>
+    );
     const mobileNav = [...nav, ["more", "More", "more"]];
     const moreNav = can("payments.manage")
       ? [
-          ["onboarding", "Payment setup", "cash"],
-          ["admin", "Account overview", "navSettings"],
+          ["weekly-summary", "Weekly summary", "navWeekly"],
+          ["team", "Team", "navTeam"],
+          ["business-settings", "Business settings", "navSettings"],
         ]
       : [];
     const navKey =
-      { "onboarding-managed": "onboarding", "onboarding-direct": "onboarding" }[
+      {
+        wallet: "home",
+        subscription: "business-settings",
+        "withdrawal-account": "business-settings",
+        "connect-paystack": "business-settings",
+        "invite-staff": "team",
+        onboarding: "business-settings",
+        admin: "business-settings",
+        "onboarding-managed": "business-settings",
+        "onboarding-direct": "business-settings",
+      }[
         active
       ] || active;
     const initials =
@@ -171,6 +206,15 @@ export function createViews({
               </div>
             </div>
             <div className="chips">
+              {can("payments.manage") && (
+                <div className="bell-wrap t-desk">
+                  <button className="bell-btn" type="button" data-live="toggle-notifs" aria-label="Notifications" aria-expanded={!!state.notifOpen}>
+                    <img src="assets/notification.svg" alt="" />
+                    {unread > 0 && <span className="bell-badge">{unread}</span>}
+                  </button>
+                  {state.notifOpen && notifPanel()}
+                </div>
+              )}
               {action}
               {can("sales.allocate") && ["home", "sales"].includes(route()) && (
                 <button
@@ -483,6 +527,27 @@ export function createViews({
             state.coreErrors.map((error, i) => <p key={i}>{error}</p>),
             "warning",
           )}
+        <div className={can("payments.manage") ? "home-grid" : ""}>
+        {can("payments.manage") && (
+          <section>
+            <div className="section-title">
+              <h2>Wallet</h2>
+            </div>
+            <div className="card pad stack-sm wallet-card">
+              <span className="caption muted">Available balance</span>
+              <strong className="money-lg">{"\u2014"}</strong>
+              <span className="caption muted">Ready to withdraw now</span>
+              <div className="kv-row">
+                <span>Total received (all time)</span>
+                <strong>{"\u2014"}</strong>
+              </div>
+              <button className="primary" type="button" data-live="withdraw">
+                Withdraw
+              </button>
+            </div>
+            <p className="sim-tag">{ico("info")} Simulated · test mode, no real money moves</p>
+          </section>
+        )}
         {state.summary && (
           <section>
             <div className="section-title">
@@ -502,6 +567,7 @@ export function createViews({
             </div>
           </section>
         )}
+        </div>
         {can("sales.allocate") && (
           <section>
             <div className="section-title">
@@ -1548,14 +1614,15 @@ export function createViews({
         <div className="stack-sm">
           <span className="field-label">How did they pay?</span>
           <div className="chip-row">
-            <span className="chip selected" aria-current="true">
-              ✓ Cash
-            </span>
+            {["Cash", "Transfer", "Card"].map((m, i) => (
+              <label className="chip" key={m}>
+                <input type="radio" name="method" value={m.toLowerCase()} defaultChecked={i === 0} />
+                <span>{m}</span>
+              </label>
+            ))}
           </div>
-          <p className="caption muted">
-            Transfers through Paystack are recorded automatically.
-          </p>
         </div>
+        {field("customer", "Customer name (optional)", "", "text", "", 'placeholder="Ada O."')}
         <p className="form-error" id="live-error" role="alert" />
         <button
           className="primary"
@@ -1679,14 +1746,42 @@ export function createViews({
       <p className="form-error" id="live-error" role="alert"/>
       <div className="auth-bottom">
         <button className="primary" type="submit">Continue</button>
-        <button type="button" className="text-btn" data-live="go" data-to="setup-products">Skip WhatsApp for now</button>
+        <button type="button" className="text-btn" data-live="go" data-to="setup-payments">Skip WhatsApp for now</button>
+      </div>
+    </form>
+  </AuthFrame>;
+}
+function setupPayments() {
+  const sel = state.setup?.payments || "paystack";
+  const opts = [
+    ["paystack", "I have a Paystack account", "Connect it so card and transfer payments show here. Money goes straight to your bank.", "homeCash"],
+    ["collection", "Use Invent IO collection", "Invent IO collects payments for you. You withdraw to your bank.", "featureBank"],
+    ["later", "Not now", "Record cash and transfers yourself. Set this up later in Business settings.", "cash"],
+  ];
+  return <AuthFrame title="Set up your business" back="setup-business">
+    <h1 className="auth-title desktop-only">Set up your business</h1>
+    <p className="step-label">STEP 2 OF 3</p>
+    <p className="status-text">How do your customers pay you?</p>
+    <form id="live-setup-payments" className="stack" noValidate>
+      <div className="pay-options">
+        {opts.map(([v, t, d, i]) => (
+          <label className="pay-option" key={v}>
+            <input type="radio" name="payments" value={v} defaultChecked={sel === v} />
+            <span className="po-icon">{ico(i)}</span>
+            <span className="po-text"><strong>{t}</strong><small>{d}</small></span>
+            <span className="po-radio" />
+          </label>
+        ))}
+      </div>
+      <div className="auth-bottom">
+        <button className="primary" type="submit">Continue</button>
       </div>
     </form>
   </AuthFrame>;
 }
 function setupProducts() {
   const n=state.setupCount||0;
-  return <AuthFrame title="Add your products" back="setup-business">
+  return <AuthFrame title="Add your products" back="setup-payments">
     <h1 className="auth-title desktop-only">Add your products</h1>
     <p className="step-label">STEP 3 OF 3</p>
     {n>0 && <p className="status-text">{n===1?'1 product added.':`${n} products added.`} Add another, or continue.</p>}
@@ -1724,7 +1819,340 @@ function setupDone() {
   </AuthFrame>;
 }
 
+  function ownerOnly(title, body, opts) {
+    if (!can("payments.manage"))
+      return shell(
+        title,
+        empty("You don’t have access", "Ask your business owner for access."),
+      );
+    return shell(title, body, opts);
+  }
+  function weeklySummary() {
+    const dash = "\u2014";
+    return ownerOnly(
+      "Weekly summary",
+      <div className="card pad stack wk-card">
+        <p className="caption">Last week</p>
+        <div className="wk-stats">
+          <div className="card pad-sm">
+            <span className="caption muted">Sales</span>
+            <strong className="money-lg">{dash}</strong>
+            <span className="caption muted">Not available yet</span>
+          </div>
+          <div className="card pad-sm">
+            <span className="caption muted">Pending payments</span>
+            <strong className="money-lg">{state.payments.length}</strong>
+            <span className="caption muted">
+              {state.payments.length ? "Waiting for products" : "All recorded"}
+            </span>
+          </div>
+        </div>
+        {state.payments.length > 0 &&
+          notice(
+            <>
+              {state.payments.length} payment
+              {state.payments.length === 1 ? " is" : "s are"} still pending.
+              Record what was sold so they count in your sales.{" "}
+              {link("Review pending payments", "sales")}
+            </>,
+            "warning",
+          )}
+        <p className="step-label">TOP PRODUCTS</p>
+        <div className="card pad-sm caption muted">
+          Top sellers will show here once your first week of sales is in.
+        </div>
+        <p className="step-label">LOW STOCK</p>
+        <div className="card pad-sm caption muted">
+          Nothing is running low.
+        </div>
+        <p className="step-label">SENT TO YOU</p>
+        <div className="card">
+          <div className="kv"><span>WhatsApp</span><strong>Not sent yet</strong></div>
+          <div className="kv"><span>Email</span><strong>Not sent yet</strong></div>
+        </div>
+        <p className="caption muted">
+          Voided sales and payments marked Not a sale are not counted.
+        </p>
+      </div>,
+      { cls: "narrow" },
+    );
+  }
+  function team() {
+    const ini = (person().name || "A")
+      .trim()
+      .split(/\s+/)
+      .map((w) => w[0])
+      .filter((c, i, a) => i === 0 || i === a.length - 1)
+      .join("")
+      .toUpperCase();
+    return ownerOnly(
+      "Team",
+      <div className="stack">
+        <div className="pay-table team-table" role="table">
+          <div className="pay-row pay-head" role="row">
+            <span>Name</span>
+            <span>Role and access</span>
+          </div>
+          <div className="pay-row" role="row">
+            <span className="prod-name">
+              <span className="avatar">{ini}</span>
+              <strong>{person().name}</strong>
+            </span>
+            <span>Owner · you</span>
+          </div>
+        </div>
+        <p className="caption muted">
+          Only you can invite or remove staff and change what they can do.
+        </p>
+      </div>,
+      {
+        action: (
+          <button
+            className="primary"
+            type="button"
+            data-live="invite-staff"
+          >
+            {ico("invite")} Invite staff
+          </button>
+        ),
+      },
+    );
+  }
+  function inviteStaff() {
+    return ownerOnly(
+      "Invite staff",
+      <div className="card pad stack">
+        <p className="muted">Share this link with your staff member. It works once and expires in 7 days.</p>
+        <label className="field">Invite link
+          <input type="text" readOnly disabled placeholder="Your invite link will appear here" />
+        </label>
+        {notice(<><strong>What they can do at first</strong><br />Record sales and View inventory. You can change this in Team after they join.</>, "info")}
+        <div className="form-actions">
+          <button className="secondary" type="button" data-live="invite-unavailable">Copy link</button>
+          <button className="primary" type="button" data-live="invite-unavailable">Share on WhatsApp</button>
+        </div>
+      </div>,
+      { back: "team", cls: "narrow" },
+    );
+  }
+
+  function subscription() {
+    const n = state.products.filter((x) => x.active !== false).length;
+    const bar = (label, used, max) => (
+      <div className="usage">
+        <div className="usage-row"><span>{label}</span><strong>{used} of {max}</strong></div>
+        <div className="usage-bar"><span style={{ width: Math.min(100, (used / max) * 100) + "%" }} /></div>
+      </div>
+    );
+    return ownerOnly(
+      "Subscription",
+      <div className="card pad stack">
+        <div className="card pad-sm stack-sm">
+          <div className="kv-row nob"><strong>Free</strong><strong>{"\u20A6"}0</strong></div>
+          <span className="caption muted">1 staff · 10 products</span>
+        </div>
+        <div className="card pad-sm stack-sm">
+          {bar("Staff", 1, 1)}
+          {bar("Products", n, 10)}
+        </div>
+        {notice(<><strong>Try Pro free for 7 days</strong><br />Up to 5 staff and unlimited products. No card needed. You can try it once.<br /><button type="button" className="text-btn" data-live="plans-unavailable">Start free trial</button></>, "info")}
+        <div className="form-actions"><button className="primary" type="button" data-live="plans-unavailable">See plans</button></div>
+      </div>,
+      { back: "business-settings", cls: "narrow" },
+    );
+  }
+  function wallet() {
+    const dash = "\u2014";
+    return ownerOnly(
+      "Wallet",
+      <>
+        <div className="wallet-grid">
+          <div className="card pad stack-sm wallet-card">
+            <span className="caption muted">Available balance</span>
+            <strong className="money-lg">{dash}</strong>
+            <span className="caption muted">Ready to withdraw now</span>
+            <div className="kv-row"><span>Total received (all time)</span><strong>{dash}</strong></div>
+            <button className="primary" type="button" data-live="withdraw-open">Withdraw</button>
+          </div>
+          <section className="stack-sm">
+            <p className="step-label">TRANSACTIONS</p>
+            <div className="chip-row">
+              {["All", "Customer payments", "Withdrawals"].map((t, i) => (
+                <span key={t} className={"chip" + (i === 0 ? " selected" : "")}>{i === 0 ? "\u2713 " : ""}{t}</span>
+              ))}
+            </div>
+            {empty("No transactions yet", "Customer payments and withdrawals will show here.")}
+          </section>
+        </div>
+        <p className="sim-tag">{ico("info")} Simulated · test mode, no real money moves</p>
+        {state.withdrawOpen && (
+          <div className="modal-backdrop">
+            {state.withdrawReview ? (
+              <div className="modal card">
+                <div className="modal-head">
+                  <h2>Review withdrawal</h2>
+                  <button type="button" className="icon-btn" data-live="withdraw-close" aria-label="Close">{"\u2715"}</button>
+                </div>
+                <div className="card">
+                  <div className="kv"><span>Withdrawal amount</span><strong>{formatMinor(state.withdrawReview)}</strong></div>
+                  <div className="kv"><span>Withdrawal fee</span><strong>{dash}</strong></div>
+                  <div className="kv"><span>To</span><strong>No withdrawal account yet</strong></div>
+                </div>
+                <p className="caption muted">The withdrawal fee is set by our payment provider and taken from the withdrawal amount.</p>
+                {notice("You can cancel while it’s Pending. Once it’s Processing, it can’t be stopped.", "info")}
+                <p className="sim-tag">{ico("info")} Simulated · test mode, no real money moves</p>
+                <p className="form-error" id="live-error" role="alert" />
+                <div className="form-actions">
+                  <button type="button" className="secondary" data-live="withdraw-change">Change amount</button>
+                  <button type="button" className="primary" data-live="withdraw-confirm">Confirm withdrawal</button>
+                </div>
+              </div>
+            ) : (
+            <form id="live-withdraw" className="modal card" noValidate>
+              <div className="modal-head">
+                <div><h2>Withdraw</h2><p className="caption muted">Money goes to your withdrawal account.</p></div>
+                <button type="button" className="icon-btn" data-live="withdraw-close" aria-label="Close">{"\u2715"}</button>
+              </div>
+              <label className="field amount-field"><span>Amount to withdraw</span>
+                <input name="amount" type="text" inputMode="decimal" placeholder={"\u20A60"} autoComplete="off" required />
+              </label>
+              <p className="caption muted">You can withdraw up to {dash}</p>
+              <div className="card">
+                <div className="kv"><span>Available balance</span><strong>{dash}</strong></div>
+                <div className="kv"><span>To</span><a href="#/withdrawal-account"><strong>Add a withdrawal account</strong></a></div>
+              </div>
+              <p className="form-error" id="live-error" role="alert" />
+              <div className="form-actions">
+                <button type="button" className="secondary" data-live="withdraw-close">Cancel</button>
+                <button type="submit" className="primary">Continue</button>
+              </div>
+            </form>
+            )}
+          </div>
+        )}
+      </>,
+      { back: "home", subtitle: "Invent IO collection account" },
+    );
+  }
+  function connectPaystack() {
+    const step = state.psStep || 1;
+    const biz = state.tenant?.businessName || api.session?.businessName || "your business";
+    return <AuthFrame title="Connect Paystack" back="business-settings">
+      <h1 className="auth-title desktop-only">Connect Paystack</h1>
+      {step === 1 && <>
+        <p className="step-label">1 OF 3 · SECRET KEY</p>
+        <p className="status-text">In your Paystack dashboard, go to Settings › API Keys & Webhooks and copy your live secret key.</p>
+        <form id="live-connect-paystack" className="stack" noValidate>
+          {field("secretKey", "Secret key", "", "password", "Starts with sk_live_", 'required autocomplete="off" placeholder="sk_live_…"')}
+          <Callout tone="info" title="Keep this key private">It’s stored encrypted. After you save it, Invent IO only shows the last 3 characters. Only you, the owner, can change it.</Callout>
+          <p className="form-error" id="live-error" role="alert" />
+          <div className="auth-bottom">
+            <button className="primary" type="submit">Check key</button>
+            {link("Do this later", "business-settings")}
+          </div>
+        </form>
+      </>}
+      {step === 2 && <>
+        <p className="step-label">2 OF 3 · WEBHOOK</p>
+        <p className="status-text">Add this link to Paystack so your payments show up in Invent IO.</p>
+        <div className="stack">
+          <label className="field">Your webhook URL
+            <input type="text" readOnly disabled placeholder="Your webhook link will appear here" />
+          </label>
+          <p className="caption muted">Unique to {biz}. Don’t share it.</p>
+          <button className="secondary" type="button" data-live="invite-unavailable">Copy link</button>
+          <div className="stack-sm">
+            <strong className="caption">In Paystack</strong>
+            <ol className="steps-list"><li>Open Settings › API Keys & Webhooks</li><li>Paste the link into Live Webhook URL</li><li>Click Save changes</li></ol>
+          </div>
+          <button className="primary" type="button" data-live="ps-next">I’ve added it</button>
+        </div>
+      </>}
+      {step === 3 && <>
+        <p className="step-label">3 OF 3 · DONE</p>
+        <Callout tone="success" title="Paystack connected">Card and transfer payments to your Paystack account will show in Pending payments, ready to match to a sale.</Callout>
+        <div className="card">
+          <div className="kv"><span>Secret key</span><strong>•••• {state.psKey || "•••"}</strong></div>
+          <div className="kv"><span>Webhook</span><strong>Waiting for first payment</strong></div>
+        </div>
+        <p className="caption muted">We’ll mark the webhook as working when your first Paystack payment arrives. Paystack pays out to your bank as usual.</p>
+        <button className="primary" type="button" data-live="ps-done">Continue</button>
+      </>}
+    </AuthFrame>;
+  }
+  function withdrawalAccount() {
+    return ownerOnly(
+      "Withdrawal account",
+      <form id="live-withdrawal-account" className="card pad stack" noValidate>
+        {field("bank", "Bank", "", "text", "", 'required placeholder="GTBank"')}
+        {field("accountNumber", "Account number", "", "text", "10 digits", 'required inputmode="numeric" maxlength="10"')}
+        <label className="field">Account name
+          <input type="text" readOnly disabled placeholder="Found with your bank" />
+        </label>
+        <p className="caption muted">We check the account name with your bank before saving. Withdrawals will go to this account.</p>
+        <p className="form-error" id="live-error" role="alert" />
+        <button className="primary save-btn" type="submit">Save account</button>
+      </form>,
+      { back: "business-settings", cls: "narrow" },
+    );
+  }
+
+  function businessSettings() {
+    const biz = state.tenant?.businessName || api.session?.businessName || "";
+    return ownerOnly(
+      "Business settings",
+      <form id="live-business-settings" className="card pad stack" noValidate>
+        {field("businessName", "Business name", biz, "text", "", "required")}
+        {field("whatsapp", "WhatsApp number", state.setup?.whatsapp || "", "tel", "", 'placeholder="0803 123 4567"')}
+        {field("summaryEmail", "Email for weekly summary", state.setup?.summaryEmail || person().email || "", "email", "")}
+        <p className="step-label">INTEGRATIONS</p>
+        <div className="card">
+          <div className="kv"><span>WhatsApp summary</span><strong>Sandbox</strong></div>
+          <div className="kv"><span>Paystack · set up by Invent IO</span><strong>Sandbox</strong></div>
+        </div>
+        <p className="step-label">PAYMENTS</p>
+        <a className="list-link card" href="#/connect-paystack">
+          <div className="grow"><strong>Connect Paystack</strong><p>Use your own Paystack account</p></div>
+          {ico("caret")}
+        </a>
+        <a className="list-link card" href="#/onboarding">
+          <div className="grow"><strong>Payment setup</strong><p>Choose how customers pay you</p></div>
+          {ico("caret")}
+        </a>
+        <a className="list-link card" href="#/admin">
+          <div className="grow"><strong>Account overview</strong><p>Your account and payment details</p></div>
+          {ico("caret")}
+        </a>
+        <p className="step-label">WITHDRAWALS</p>
+        <a className="list-link card" href="#/withdrawal-account">
+          <div className="grow"><strong>Withdrawal account</strong><p>Not set up yet</p></div>
+          {ico("caret")}
+        </a>
+        <p className="caption muted">
+          Only you can see or change this. Shown only for businesses using Invent IO payment collection.
+        </p>
+        <p className="step-label">SUBSCRIPTION</p>
+        <a className="list-link card" href="#/subscription">
+          <div className="grow"><strong>Subscription</strong><p>Free plan · 1 staff, 10 products</p></div>
+          {ico("caret")}
+        </a>
+        <p className="form-error" id="live-error" role="alert" />
+        <button className="primary save-btn" type="submit">Save changes</button>
+      </form>,
+      { cls: "narrow" },
+    );
+  }
+
   return {
+    weeklySummary,
+    subscription,
+    wallet,
+    connectPaystack,
+    withdrawalAccount,
+    inviteStaff,
+    setupPayments,
+    team,
+    businessSettings,
     setupBusiness,
     setupProducts,
     setupDone,

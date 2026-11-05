@@ -35,7 +35,8 @@ export function CheckEmail({api}) {
   };
   return <AuthFrame title="Reset password" back="forgot">
     <h1 className="auth-title desktop-only">Reset password</h1>
-    <StatusBlock kind="mail" title="Check your email">{email ? `If an account exists for ${email}, we’ve sent a link to reset your password. It may take a few minutes — check spam too.` : 'If an account exists for that email, we’ve sent a link to reset your password. It may take a few minutes — check spam too.'}</StatusBlock>
+    <div className="status-block mobile-only"><span className="status-icon mail">{icons.mail}</span><h2>Check your email</h2></div>
+    <p className="status-text">{email ? `If an account exists for ${email}, we’ve sent a link to reset your password. It may take a few minutes — check spam too.` : 'If an account exists for that email, we’ve sent a link to reset your password. It may take a few minutes — check spam too.'}</p>
     {sent === 'failed' && <Callout tone="error" title="Couldn’t send the email">Check your connection and try again.</Callout>}
     <div className="auth-bottom">{link('Back to log in', 'login', 'primary')}{email && <button type="button" className="text-btn" onClick={again} disabled={sent === 'sending'}>{sent === 'sending' ? 'Sending…' : sent === 'sent' ? 'Sent again' : 'Send again'}</button>}</div>
   </AuthFrame>;

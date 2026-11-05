@@ -52,7 +52,7 @@ import {createFrontendServer} from '../scripts/serve.mjs';
  await page.fill('input[name=password]','backend-error');await page.click('#live-auth button[type=submit]');await page.getByRole('alert').filter({hasText:'test-request-id'}).waitFor();assert.equal(await page.evaluate(()=>sessionStorage.getItem('invent-api-session-v1')),null);assert.equal(await page.locator('input[name=email]').inputValue(),'test@example.test');
  await page.fill('input[name=password]','correct-password');await page.click('#live-auth button[type=submit]');await page.waitForURL('**/#/home');
  await page.getByRole('heading',{name:'Today’s sales'}).waitFor();
- for(const [hash,label] of [['onboarding','Payment setup'],['admin','Account overview'],['home','Home']]) {await page.goto('http://127.0.0.1:4181/#/'+hash);await page.locator('.side-nav a.active').filter({hasText:label}).waitFor();}
+ for(const [hash,label] of [['onboarding','Business settings'],['admin','Business settings'],['team','Team'],['weekly-summary','Weekly summary'],['business-settings','Business settings'],['home','Home']]) {await page.goto('http://127.0.0.1:4181/#/'+hash);await page.locator('.side-nav a.active').filter({hasText:label}).waitFor();}
  await page.goto('http://127.0.0.1:4181/#/account');await page.locator('.account-link').waitFor();assert.equal(await page.locator('.side-nav a.active').count(),0,'Account is the footer block; no sidebar item is highlighted');
  await page.goto('http://127.0.0.1:4181/#/home');
  await page.goto('http://127.0.0.1:4181/#/change-password');

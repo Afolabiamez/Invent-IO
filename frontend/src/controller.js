@@ -130,6 +130,15 @@ export function createMerchantController({ ui, rerender }) {
     salesScreen,
     saleDetail,
     recordPayment,
+    weeklySummary,
+    subscription,
+    wallet,
+    connectPaystack,
+    withdrawalAccount,
+    inviteStaff,
+    setupPayments,
+    team,
+    businessSettings,
     matchScreen,
     setupBusiness,
     setupProducts,
@@ -282,6 +291,7 @@ export function createMerchantController({ ui, rerender }) {
     }
   }
   function render(route, params) {
+    if (renderRoute !== route) state.notifOpen = false;
     renderRoute = route;
     if (route === "welcome") return null;
     if (["login", "create", "forgot", "reset"].includes(route))
@@ -303,6 +313,15 @@ export function createMerchantController({ ui, rerender }) {
     const screens = {
       home,
       "record-payment": recordPayment,
+      "weekly-summary": weeklySummary,
+      team,
+      "invite-staff": inviteStaff,
+      subscription,
+      wallet,
+      "connect-paystack": connectPaystack,
+      "withdrawal-account": withdrawalAccount,
+      "setup-payments": setupPayments,
+      "business-settings": businessSettings,
       "sale-detail": () => saleDetail(params.get("id")),
       sales: salesScreen,
       "match-payment": matchScreen,
@@ -532,6 +551,59 @@ export function createMerchantController({ ui, rerender }) {
     if (!b || b.disabled) return;
     const action = b.dataset.live;
     try {
+      if (action === "withdraw") {
+        go("wallet");
+        return;
+      }
+      if (action === "withdraw-open" || action === "withdraw-close") {
+        state.withdrawOpen = action === "withdraw-open";
+        state.withdrawReview = null;
+        rerender();
+        return;
+      }
+      if (action === "withdraw-change") {
+        state.withdrawReview = null;
+        rerender();
+        return;
+      }
+      if (action === "withdraw-confirm") {
+        const e = document.getElementById("live-error");
+        if (e) e.textContent = "Withdrawals aren’t available yet.";
+        return;
+      }
+      if (action === "ps-next") {
+        state.psStep = 3;
+        rerender();
+        return;
+      }
+      if (action === "ps-done") {
+        state.psStep = 1;
+        state.psKey = "";
+        go("business-settings");
+        return;
+      }
+      if (action === "plans-unavailable") {
+        toast("Plans aren’t available yet.");
+        return;
+      }
+      if (action === "invite-staff") {
+        go("invite-staff");
+        return;
+      }
+      if (action === "invite-unavailable") {
+        toast("Invite links aren’t available yet.");
+        return;
+      }
+      if (action === "toggle-notifs") {
+        state.notifOpen = !state.notifOpen;
+        rerender();
+        return;
+      }
+      if (action === "notifs-read") {
+        state.notifRead = true;
+        rerender();
+        return;
+      }
       if (action === "refresh-core") {
         await loadCore();
         rerender();
@@ -762,6 +834,8 @@ export function createMerchantController({ ui, rerender }) {
       if (form.id === "live-cash-payment") {
         if (!can("sales.allocate"))
           throw new Error("You don’t have permission to record payments.");
+        if (data.method && data.method !== "cash")
+          throw new Error("Only cash can be recorded here for now. Transfers arrive on their own.");
         const amountMinor = nairaToMinor(data.amount);
         if (BigInt(amountMinor) <= 0n)
           throw new Error("Enter an amount greater than zero.");
@@ -780,9 +854,46 @@ export function createMerchantController({ ui, rerender }) {
         return;
       }
 
+      if (form.id === "live-business-settings") {
+        state.setup = {
+          whatsapp: (data.whatsapp || "").trim(),
+          summaryEmail: (data.summaryEmail || "").trim(),
+        };
+        toast("Changes can’t be saved yet.");
+        return;
+      }
+
+      if (form.id === "live-withdraw") {
+        const minor = nairaToMinor(data.amount);
+        if (BigInt(minor) <= 0n) throw new Error("Enter an amount greater than zero.");
+        state.withdrawReview = minor;
+        rerender();
+        return;
+      }
+      if (form.id === "live-withdrawal-account") {
+        if (!/^\d{10}$/.test((data.accountNumber || "").trim()))
+          throw new Error("Account number must be 10 digits.");
+        throw new Error("Saving a withdrawal account isn’t available yet.");
+      }
+      if (form.id === "live-connect-paystack") {
+        const key = (data.secretKey || "").trim();
+        if (!/^sk_(live|test)_/.test(key))
+          throw new Error("That doesn’t look like a Paystack secret key. It starts with sk_live_.");
+        state.psKey = key.slice(-3);
+        state.psStep = 2;
+        rerender();
+        return;
+      }
+
+      if (form.id === "live-setup-payments") {
+        state.setup = { ...(state.setup || {}), payments: data.payments || "paystack" };
+        go("setup-products", true);
+        return;
+      }
+
       if (form.id === "live-setup-business") {
   state.setup = { whatsapp: data.whatsapp.trim(), summaryEmail: data.summaryEmail.trim() };
-  go("setup-products", true);
+  go("setup-payments", true);
   return;
 }
 if (form.id === "live-setup-product") {

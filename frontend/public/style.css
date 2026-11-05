@@ -3296,5 +3296,54 @@ body:has(.back-office) .demo-banner + .back-office .admin-sidebar { top:30px; he
 .amount-field span,.field-label{font-size:14px;color:#57534e}
 .amount-field input{font-size:40px;line-height:48px;font-weight:700;border:0;border-bottom:2px solid #0f6b5c;border-radius:0;padding:4px 0;background:transparent;outline:none}
 .chip-row{display:flex;gap:8px}
-.chip{display:inline-flex;align-items:center;height:40px;padding:0 16px;border:1px solid #1c1917;border-radius:999px;font-size:14px;font-weight:600}
+.chip input{position:absolute;opacity:0;pointer-events:none}.chip:has(input:checked){background:#e6f4f2;border-color:#0f6b5c;color:#0f6b5c}.chip{position:relative;cursor:pointer;display:inline-flex;align-items:center;height:40px;padding:0 16px;border:1px solid #1c1917;border-radius:999px;font-size:14px;font-weight:600}
 .chip.selected{background:#e6f4f2;border-color:#0f6b5c;color:#0f6b5c}
+
+/* Weekly summary / Team / Business settings (Figma W-MO-*) */
+.wk-stats{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.wk-stats .card{display:flex;flex-direction:column;gap:4px}
+.kv{display:flex;flex-direction:column;gap:2px;padding:12px 16px;border-bottom:1px solid #e7e5e4}
+.kv:last-child{border-bottom:0}
+.kv span{font-size:14px;color:#57534e}.kv strong{font-size:16px}
+.save-btn{align-self:flex-end;width:auto;padding:0 24px}
+.team-table .pay-row{grid-template-columns:1fr 1fr}
+.topbar .primary{display:inline-flex;align-items:center;gap:8px}
+@media (max-width:767px){.wk-stats{grid-template-columns:1fr}}
+
+/* Home wallet and bell (Figma W-HM-01) */
+.home-grid{display:grid;gap:24px}
+@media (min-width:768px){.home-grid{grid-template-columns:368px 1fr;align-items:start}}
+.kv-row{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #e7e5e4;padding-top:12px;margin-top:4px;font-size:14px}
+.sim-tag{display:inline-flex;align-items:center;gap:6px;margin:8px 0 0;padding:2px 8px;border-radius:999px;background:#e8f0fe;color:#1d4ed8;font-size:12px}
+.bell-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px}
+.bell-badge{position:absolute;top:2px;right:0;min-width:18px;height:18px;border-radius:9px;background:#c4211c;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px}
+
+/* Onboarding step 2, notification panel, invite (Figma W-PY-01, W-NT-01, W-MO-04) */
+.pay-options{display:flex;flex-direction:column;gap:16px}
+.pay-option{position:relative;display:flex;align-items:center;gap:16px;padding:16px;border:1px solid #e7e5e4;border-radius:16px;background:#fff;cursor:pointer}
+.pay-option input{position:absolute;opacity:0}
+.pay-option:has(input:checked){background:#e6f4f2;border:2px solid #0f6b5c;padding:15px}
+.po-icon{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:#f5f5f4;flex:none}
+.po-text{display:flex;flex-direction:column;gap:2px;flex:1}.po-text strong{font-size:15px}.po-text small{font-size:13px;line-height:20px;color:#57534e}
+.po-radio{width:22px;height:22px;border-radius:50%;border:2px solid #78716c;flex:none}
+.pay-option:has(input:checked) .po-radio{border:6px solid #0f6b5c;background:#fff}
+.bell-wrap{position:relative}
+.notif-panel{position:fixed;top:76px;right:32px;width:400px;max-height:700px;overflow:auto;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:30}
+.notif-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px;border-bottom:1px solid #e7e5e4}
+.notif-item{display:flex;gap:12px;align-items:flex-start;padding:16px 20px;color:inherit;text-decoration:none}
+.notif-item.unread{background:#e6f4f2}
+.notif-dot{width:10px;height:10px;border-radius:50%;background:#0f6b5c;margin-top:6px}
+.notif-empty{padding:32px 20px;text-align:center;color:#57534e;margin:0}
+.narrow .card input,.narrow .card select{max-width:100%;box-sizing:border-box}.form-actions{flex-wrap:wrap}
+
+/* Subscription, wallet, withdraw dialog (Figma W-SB-01, W-WL-01/04) */
+.usage{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}.usage-row{display:flex;justify-content:space-between;font-size:14px}
+.usage-bar{height:6px;border-radius:3px;background:#e7e5e4;overflow:hidden}.usage-bar span{display:block;height:100%;background:#0f6b5c}
+.kv-row.nob{border:0;padding:0;margin:0}
+.wallet-grid{display:grid;gap:24px}@media(min-width:768px){.wallet-grid{grid-template-columns:360px 1fr;align-items:start}}
+.modal-backdrop{position:fixed;inset:0;background:rgba(28,25,23,.5);display:flex;align-items:center;justify-content:center;z-index:40;padding:16px}
+.modal{width:100%;max-width:560px;padding:24px;display:flex;flex-direction:column;gap:16px}
+.modal-head{display:flex;justify-content:space-between;align-items:flex-start}.modal-head h2{margin:0;font-size:18px}
+.modal .form-actions{justify-content:flex-end}
+.pad-sm{padding:16px}.card.pad-sm.stack-sm{display:flex;flex-direction:column;gap:8px}
+.steps-list{margin:0;padding-left:0;list-style:none;font-size:14px;line-height:20px;color:#57534e;display:flex;flex-direction:column;gap:2px}
