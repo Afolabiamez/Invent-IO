@@ -18,13 +18,14 @@ const icons = {
   mail: <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3.5 6.5 8.5 7 8.5-7" /></svg>,
   check: <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="m8 12.3 2.8 2.8L16.2 9.5" /></svg>,
   warn: <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 4 2.8 20h18.4L12 4Z" /><path d="M12 10v4.5M12 17.4h.01" /></svg>,
+  clock: <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>,
   info: <svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" aria-hidden="true"><circle cx="10" cy="10" r="8" /><path d="M10 9v5M10 6.2h.01" /></svg>,
   success: <svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="8" /><path d="m6.6 10.2 2.3 2.3 4.5-4.6" /></svg>,
   error: <svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" aria-hidden="true"><circle cx="10" cy="10" r="8" /><path d="M10 6v5M10 13.6h.01" /></svg>,
 };
 
 export const Callout = ({tone, title, children}) => <div className={'callout ' + tone} role={tone === 'error' ? 'alert' : 'status'}>{icons[tone]}<div><strong>{title}</strong><p>{children}</p></div></div>;
-export const StatusBlock = ({kind, title, children}) => <div className="status-block"><span className={'status-icon ' + kind}>{icons[kind === 'mail' ? 'mail' : kind === 'warn' ? 'warn' : 'check']}</span><h2>{title}</h2><p>{children}</p></div>;
+export const StatusBlock = ({kind, title, children}) => <div className="status-block"><span className={'status-icon ' + kind}>{icons[kind === 'mail' ? 'mail' : kind === 'warn' ? 'warn' : kind === 'clock' ? 'clock' : 'check']}</span><h2>{title}</h2><p>{children}</p></div>;
 
 export function CheckEmail({api}) {
   const email = recalledEmail('reset');
@@ -60,7 +61,7 @@ export function VerifyPending({api, state: initial = ''}) {
     <p className="status-text">{`We sent a verification link to ${to}. Open ${email ? 'the link' : 'it'} to verify your email and finish creating your account.`}</p>
     <Callout tone="info" title="Verification is required">You can’t continue setting up until your email is verified.</Callout>
     <p className="hint-text desktop-only">Didn’t get the email? Check your spam folder, or send it again.</p>
-    <div className="auth-bottom"><button type="button" className="secondary" onClick={resend} disabled={state === 'sending'}>{state === 'sending' ? 'Sending…' : state === 'failed' ? 'Try again' : 'Resend email'}</button><div className="recovery"><button type="button" className="text-btn" data-live="logout">Back to log in</button></div></div>
+    <div className="auth-bottom"><button type="button" className="secondary" onClick={resend} disabled={state === 'sending'}>{state === 'sending' ? 'Sending…' : state === 'failed' ? 'Try again' : 'Resend email'}</button><div className="recovery"><button type="button" className="text-btn" data-live="logout" data-after="create">Change email</button><button type="button" className="text-btn" data-live="logout">Back to log in</button></div></div>
   </AuthFrame>;
 }
 
@@ -90,4 +91,16 @@ export function VerifyResult({token, verify, api}) {
   if (p === 'already') return <AuthFrame title="Email verified" bigTitle><StatusBlock kind="check" title="Your email is already verified">{`${who} was verified earlier. Continue where you left off.`}</StatusBlock><div className="auth-bottom">{link('Continue setup', continueTo, 'primary')}</div></AuthFrame>;
   if (p === 'invalid') return <AuthFrame title="Verify your email" bigTitle><StatusBlock kind="warn" title="This link no longer works">The verification link has expired or isn’t valid. Send a new link to finish creating your account.</StatusBlock><div className="auth-bottom"><button type="button" className="primary" onClick={newLink} disabled={resending}>{resending ? 'Sending…' : 'Send a new link'}</button>{link('Back to log in', 'login')}</div></AuthFrame>;
   return <AuthFrame title="Verify your email" bigTitle><StatusBlock kind="warn" title="We couldn’t verify your email">{result.message || 'Something went wrong. Try again in a moment.'}</StatusBlock><div className="auth-bottom"><button type="button" className="primary" onClick={() => setRun(n => n + 1)}>Try again</button>{link('Back to log in', 'login')}</div></AuthFrame>;
+}
+
+export function InviteStatus({kind}) {
+  const screens = {
+    expired: ['clock', 'This invite has expired', 'Invite links work once and last 7 days. Ask your owner for a new invite link.', 'Log in instead', 'login', false],
+    used: ['warn', 'This invite can’t be used', 'It was cancelled or already used. Ask your owner for a new invite link.', 'Log in instead', 'login', false],
+    joined: ['check', 'Email verified', 'Your email is verified. You’ve joined the team.', 'Continue', 'home', true],
+    'joined-expired': ['check', 'Email verified', 'Your email is verified, but the invite expired before you finished, so you haven’t joined the team. Ask your owner for a new invite link.', 'Log in', 'login', false],
+    'joined-used': ['check', 'Email verified', 'Your email is verified, but the invite was cancelled or already used, so you haven’t joined the team. Ask your owner for a new invite link.', 'Log in', 'login', false],
+  };
+  const [icon, title, text, cta, to, primary] = screens[kind] || screens.expired;
+  return <AuthFrame title={title} bigTitle><StatusBlock kind={icon} title={title}>{text}</StatusBlock><div className="auth-bottom">{link(cta, to, primary ? 'primary' : 'secondary')}</div></AuthFrame>;
 }

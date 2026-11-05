@@ -15,6 +15,7 @@ import {
   AuthFrame,
   Callout,
   CheckEmail,
+  InviteStatus,
   VerifyPending,
   VerifyResult,
 } from "./authScreens.jsx";
@@ -44,8 +45,12 @@ export function createViews({
   ) {
     const nav = [
       ["home", "Home", "navHome"],
-      ...(can("sales.allocate") ? [["sales", "Sales", "navSales"]] : []),
-      ...(can("catalog.read") ? [["products", "Products", "navProducts"]] : []),
+      ...(can("sales.allocate")
+        ? [["sales", can("payments.manage") ? "Sales" : "My sales", "navSales"]]
+        : []),
+      ...(can("catalog.read")
+        ? [["products", can("payments.manage") ? "Products" : "Stock", "navProducts"]]
+        : []),
     ];
     const unread = state.notifRead ? 0 : state.payments.length;
     const notifPanel = () => (
@@ -55,7 +60,20 @@ export function createViews({
           <button type="button" className="text-btn" data-live="notifs-read">Mark all as read</button>
           <a href="#/notification-settings" aria-label="Notification settings">{ico("navSettings")}</a>
         </div>
-        {state.payments.length ? (
+        {state.notifState === "loading" ? (
+          <div className="notif-skel" aria-busy="true">
+            {[0, 1, 2, 3].map((i) => (
+              <div className="skel-row" key={i}><span className="skel w60" /><span className="skel pill" /></div>
+            ))}
+          </div>
+        ) : state.notifState === "error" ? (
+          <div className="notif-error">
+            <span className="po-icon err">{ico("connectionError")}</span>
+            <strong>Couldn’t load notifications</strong>
+            <p>Check your connection and try again.</p>
+            <button type="button" className="primary" data-live="notifs-retry">Try again</button>
+          </div>
+        ) : state.payments.length ? (
           state.payments.slice(0, 5).map((p) => (
             <a key={p.id} className={"notif-item" + (unread ? " unread" : "")} href="#/sales">
               <span className="po-icon">{ico("cash")}</span>
@@ -82,7 +100,14 @@ export function createViews({
     const navKey =
       {
         wallet: "home",
+        paystack: "business-settings",
+        withdrawal: "home",
+        "payment-detail": "home",
+        "subscription-pro": "business-settings",
+        "staff-member": "team",
+        "staff-permissions": "team",
         subscription: "business-settings",
+        plans: "business-settings",
         "withdrawal-account": "business-settings",
         "connect-paystack": "business-settings",
         "invite-staff": "team",
@@ -265,9 +290,10 @@ export function createViews({
       </>
     );
   }
-  function auth(kind) {
-    const title = {
+  function auth(kind, invite = false) {
+    const title = invite ? "Log in to join your team" : {
       create: "Create account",
+      join: "Join your team",
       forgot: "Reset password",
       reset: "Set new password",
       login: "Log in",
@@ -275,6 +301,7 @@ export function createViews({
     const subtitle = {
       create:
         "Set up your Invent IO account. You\u2019ll be the owner of your business.",
+      join: "Create your account to join the team you were invited to.",
       forgot: "",
       reset: "",
       login: "",
@@ -289,7 +316,9 @@ export function createViews({
         ? "Send reset link"
         : kind === "reset"
           ? "Save new password"
-          : title;
+          : invite
+            ? "Log in and join"
+            : title;
     const errorLine = (
       <p className="form-error auth-alert" role="alert" id="live-error" />
     );
@@ -346,6 +375,12 @@ export function createViews({
               <div className="auth-form-brand">{brand()}</div>
             )}
             {kind === "login" && errorLine}
+            {invite && <div className="auth-heading"><h1>{title}</h1></div>}
+            {invite && (
+              <Callout tone="info" title="You’ve been invited as Staff">
+                To start, you can record sales and view inventory. Your owner can change this later — see it anytime in Account.
+              </Callout>
+            )}
             {kind !== "login" && (
               <div className="auth-heading">
                 <h1>{title}</h1>
@@ -353,7 +388,12 @@ export function createViews({
               </div>
             )}
             {intro && <p className="auth-intro">{intro}</p>}
-            {kind === "create" &&
+            {kind === "join" &&
+              notice(
+                "You can record sales and view inventory to start. Your owner can change this later.",
+                "info",
+              )}
+            {(kind === "create" || kind === "join") &&
               field(
                 "name",
                 "Your name",
@@ -372,10 +412,12 @@ export function createViews({
                 'required autocomplete="username"',
               )}
 
-             {kind==='create' && field('phone','Phone (optional)','','tel','','autocomplete="tel"')} 
+             {(kind==='create'||kind==='join') && field('phone','Phone (optional)','','tel','','autocomplete="tel"')} 
             {password}
             {kind === "create" &&
               link("Forgot password?", "forgot", "text-btn auth-forgot")}
+            {kind === "join" &&
+              link("Already have an account? Log in to accept", "login", "text-btn auth-forgot")}
             {kind === "create" &&
               field(
                 "businessName",
@@ -396,7 +438,7 @@ export function createViews({
               )}
             {kind === "login" &&
               link("Forgot password?", "forgot", "text-btn auth-forgot")}
-            {kind === "login" && (
+            {kind === "login" && !invite && (
               <p className="auth-hint">
                 Joining a team? Open the invite link from your owner.
               </p>
@@ -413,11 +455,13 @@ export function createViews({
               {kind !== "forgot" &&
                 link(
                   kind === "login"
-                    ? "Create account"
+                    ? invite
+                      ? "New to Invent IO? Join with a new account"
+                      : "Create account"
                     : kind === "create"
                       ? "Log in instead"
                       : "Back to log in",
-                  kind === "login" ? "create" : "login",
+                  kind === "login" ? (invite ? "join" : "create") : "login",
                 )}
             </div>
           </form>
@@ -527,7 +571,7 @@ export function createViews({
             state.coreErrors.map((error, i) => <p key={i}>{error}</p>),
             "warning",
           )}
-        <div className={can("payments.manage") ? "home-grid" : ""}>
+        <div className={can("payments.manage") ? "hm-grid" : ""}>
         {can("payments.manage") && (
           <section>
             <div className="section-title">
@@ -551,8 +595,8 @@ export function createViews({
         {state.summary && (
           <section>
             <div className="section-title">
-              <h2>Today’s sales</h2>
-              {link("View sales", "sales")}
+              <h2>{can("payments.manage") ? "Today’s sales" : "My sales today"}</h2>
+              {link(can("payments.manage") ? "View sales" : "View all", "sales")}
             </div>
             <div className="card daily">
               <strong className="money-lg">
@@ -599,6 +643,34 @@ export function createViews({
       </>
     );
   }
+  function planBanner() {
+    const plan = state.tenant?.plan;
+    if (!plan || !can("payments.manage")) return null;
+    if (plan.status === "trialing" && plan.daysLeft != null && plan.daysLeft <= 2)
+      return notice(
+        <>
+          <strong>Pro trial · {plan.daysLeft} {plan.daysLeft === 1 ? "day" : "days"} left</strong>
+          <br />
+          Subscribe to keep up to 5 staff and unlimited products.
+          {plan.endsOn ? " On " + plan.endsOn + " you move to Free." : ""}
+          <br />
+          {link("Subscribe", "plans", "text-btn")}
+        </>,
+        "info",
+      );
+    if (plan.status === "ended" && plan.overLimits)
+      return notice(
+        <>
+          <strong>Pro ended</strong>
+          <br />
+          You’re over the Free plan, so recording payments is paused. Subscribe again, or get down to 1 staff and 10 products.
+          <br />
+          {link("Subscribe again", "plans", "text-btn")}
+        </>,
+        "warning",
+      );
+    return null;
+  }
   function home() {
     const day = new Date().toLocaleDateString("en-GB", {
       weekday: "short",
@@ -609,6 +681,7 @@ export function createViews({
     return shell(
       "Home",
       <div className="stack">
+        {planBanner()}
         {dashboard()}
         {state.catalogError && notice(state.catalogError, "warning")}
       </div>,
@@ -1211,7 +1284,27 @@ export function createViews({
     return shell(
       "Account",
       <section className="card acct-card">
-        {row("Name", person().name)}
+        <div className="acct-head">
+          <h2 className="acct-title">Your details</h2>
+          {!state.editingName && (
+            <button type="button" className="text-btn" data-live="name-edit" aria-label="Edit name">
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M13.5 3.5l3 3L7 16l-4 1 1-4 9.500-9.500z" /></svg>
+              Edit
+            </button>
+          )}
+        </div>
+        {state.editingName ? (
+          <form id="live-account-name" className="acct-name" noValidate>
+            <label className="acct-label" htmlFor="acct-name">Name</label>
+            <input id="acct-name" name="name" type="text" defaultValue={person().name} autoComplete="name" autoFocus required />
+            <div className="form-actions">
+              <button className="secondary" type="button" data-live="name-cancel">Cancel</button>
+              <button className="primary" type="submit">Save changes</button>
+            </div>
+          </form>
+        ) : (
+          row("Name", person().name)
+        )}
         {row("Email", person().email)}
         {row("Role", [role, biz].filter(Boolean).join(" \u00b7 "))}
         <a
@@ -1270,8 +1363,9 @@ export function createViews({
           "Notifications",
           "Browser alerts for payments and stock",
         )}
-        {can("payments.manage") && r("onboarding", "Payment setup")}
-        {can("payments.manage") && r("admin", "Account overview")}
+        {can("payments.manage") && r("weekly-summary", "Weekly summary")}
+        {can("payments.manage") && r("team", "Team", "Invite and manage staff")}
+        {can("payments.manage") && r("business-settings", "Business settings")}
         <div className="acct-actions">
           <button className="text-btn acct-logout" data-live="logout">
             Log out
@@ -1398,9 +1492,25 @@ export function createViews({
             i.qty,
         )
         .join(", ") || "\u2014";
+    const paused =
+      state.tenant?.plan?.status === "ended" &&
+      state.tenant?.plan?.overLimits &&
+      !state.pausedDismissed;
     return shell(
       "Sales",
       <div className="stack">
+        {paused && (
+          <div className="modal-backdrop">
+            <div className="modal card">
+              <div className="modal-head"><h2>Recording payments is paused</h2><button type="button" className="icon-btn" data-live="paused-close" aria-label="Close">{"\u2715"}</button></div>
+              <p className="muted">Pro has ended and {state.tenant?.businessName || "your business"} is over the Free plan. Payments still come in and wait here. Subscribe again, or get down to 1 staff and 10 products.</p>
+              <div className="form-actions">
+                <button type="button" className="secondary" data-live="paused-close">Not now</button>
+                <button type="button" className="primary" data-live="go" data-to="plans">Subscribe again</button>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="chip-row">
           {chip(
             "salesTab",
@@ -1408,8 +1518,9 @@ export function createViews({
             "Pending payments (" + state.payments.length + ")",
           )}
           {can("reports.view") && chip("salesTab", "recorded", "Recorded")}
+          {chip("salesTab", "notsale", "Not a sale")}
           <span className="chip-gap" />
-          {state.salesTab === "pending" ? (
+          {state.salesTab === "notsale" ? null : state.salesTab === "pending" ? (
             <>
               <span className="chip-label">Sort</span>
               {chip("salesSort", "oldest", "Oldest first")}
@@ -1426,7 +1537,9 @@ export function createViews({
         {state.coreErrors.map((e, i) => (
           <React.Fragment key={i}>{notice(e, "warning")}</React.Fragment>
         ))}
-        {state.salesTab === "pending" || !can("reports.view") ? (
+        {state.salesTab === "notsale" ? (
+          empty("Nothing marked Not a sale", "Payments you mark as Not a sale will show here. They aren’t counted in your sales.")
+        ) : state.salesTab === "pending" || !can("reports.view") ? (
           pendingList.length ? (
             <>
               <div className="pay-table sales-table" role="table">
@@ -1784,9 +1897,15 @@ function setupProducts() {
   return <AuthFrame title="Add your products" back="setup-payments">
     <h1 className="auth-title desktop-only">Add your products</h1>
     <p className="step-label">STEP 3 OF 3</p>
+    <p className="plan-note">Free plan: up to 10 products. Upgrade to Pro any time for unlimited.</p>
     {n>0 && <p className="status-text">{n===1?'1 product added.':`${n} products added.`} Add another, or continue.</p>}
     <Callout tone="info" title="Add the products you sell">Add what you sell now, or any time later. You can start recording payments either way.</Callout>
     <form key={state.formNonce} id="live-setup-product" className="stack" noValidate>
+      <div className="photo-row">
+        <span className="photo-add">{ico("plus")}</span>
+        <div className="po-text"><strong>Product photo</strong><small>Optional. Helps staff find it quickly when selling.</small>
+          <button type="button" className="chip photo-btn" data-live="photo-unavailable">{ico("plus")} Add photo</button></div>
+      </div>
       {field('name','Product name','','text','','required placeholder="e.g. Shea butter 250g"')}
       {field('price','Selling price (₦)','','text','','required inputmode="decimal" placeholder="e.g. 2,000"')}
       {field('cost','Cost price (₦)','','text','Used to work out your profit.','required inputmode="decimal" placeholder="e.g. 1,400"')}
@@ -1904,6 +2023,7 @@ function setupDone() {
         <p className="caption muted">
           Only you can invite or remove staff and change what they can do.
         </p>
+        
       </div>,
       {
         action: (
@@ -1955,8 +2075,8 @@ function setupDone() {
           {bar("Staff", 1, 1)}
           {bar("Products", n, 10)}
         </div>
-        {notice(<><strong>Try Pro free for 7 days</strong><br />Up to 5 staff and unlimited products. No card needed. You can try it once.<br /><button type="button" className="text-btn" data-live="plans-unavailable">Start free trial</button></>, "info")}
-        <div className="form-actions"><button className="primary" type="button" data-live="plans-unavailable">See plans</button></div>
+        {notice(<><strong>Try Pro free for 7 days</strong><br />Up to 5 staff and unlimited products. No card needed. You can try it once.<br /><button type="button" className="text-btn" data-live="go" data-to="plans">Start free trial</button></>, "info")}
+        <div className="form-actions"><button className="primary" type="button" data-live="go" data-to="plans">See plans</button></div>
       </div>,
       { back: "business-settings", cls: "narrow" },
     );
@@ -1966,7 +2086,7 @@ function setupDone() {
     return ownerOnly(
       "Wallet",
       <>
-        <div className="wallet-grid">
+        <div className="wl-grid">
           <div className="card pad stack-sm wallet-card">
             <span className="caption muted">Available balance</span>
             <strong className="money-lg">{dash}</strong>
@@ -2037,18 +2157,19 @@ function setupDone() {
   function connectPaystack() {
     const step = state.psStep || 1;
     const biz = state.tenant?.businessName || api.session?.businessName || "your business";
-    return <AuthFrame title="Connect Paystack" back="business-settings">
-      <h1 className="auth-title desktop-only">Connect Paystack</h1>
+    const replace = new URLSearchParams(location.hash.split("?")[1]).get("replace") === "1";
+    return <AuthFrame title={replace ? "Replace secret key" : "Connect Paystack"} back="paystack">
+      <h1 className="auth-title desktop-only">{replace ? "Replace secret key" : "Connect Paystack"}</h1>
       {step === 1 && <>
-        <p className="step-label">1 OF 3 · SECRET KEY</p>
-        <p className="status-text">In your Paystack dashboard, go to Settings › API Keys & Webhooks and copy your live secret key.</p>
+        <p className="step-label">{replace ? "SECRET KEY" : "1 OF 3 · SECRET KEY"}</p>
+        <p className="status-text">{replace ? "Paste the new live secret key from Settings › API Keys & Webhooks in Paystack. Your webhook link stays the same." : "In your Paystack dashboard, go to Settings › API Keys & Webhooks and copy your live secret key."}</p>
         <form id="live-connect-paystack" className="stack" noValidate>
           {field("secretKey", "Secret key", "", "password", "Starts with sk_live_", 'required autocomplete="off" placeholder="sk_live_…"')}
           <Callout tone="info" title="Keep this key private">It’s stored encrypted. After you save it, Invent IO only shows the last 3 characters. Only you, the owner, can change it.</Callout>
           <p className="form-error" id="live-error" role="alert" />
           <div className="auth-bottom">
-            <button className="primary" type="submit">Check key</button>
-            {link("Do this later", "business-settings")}
+            <button className="primary" type="submit">{replace ? "Save key" : "Check key"}</button>
+            {link(replace ? "Cancel" : "Do this later", replace ? "paystack" : "business-settings")}
           </div>
         </form>
       </>}
@@ -2081,6 +2202,21 @@ function setupDone() {
     </AuthFrame>;
   }
   function withdrawalAccount() {
+    const acct = state.tenant?.withdrawalAccount;
+    if (acct && !state.editingAccount)
+      return ownerOnly(
+        "Withdrawal account",
+        <div className="card pad stack">
+          <div className="card">
+            <div className="kv"><span>Bank</span><strong>{acct.bank || "\u2014"}</strong></div>
+            <div className="kv"><span>Account number</span><strong>{acct.last4 ? "•••• " + acct.last4 : "\u2014"}</strong></div>
+            <div className="kv"><span>Account name</span><strong>{acct.name || "\u2014"}</strong></div>
+          </div>
+          <p className="caption muted">Withdrawals go to this account.</p>
+          <div className="form-actions"><button className="secondary" type="button" data-live="account-edit">Change account</button></div>
+        </div>,
+        { back: "business-settings", cls: "narrow" },
+      );
     return ownerOnly(
       "Withdrawal account",
       <form id="live-withdrawal-account" className="card pad stack" noValidate>
@@ -2093,6 +2229,219 @@ function setupDone() {
         <p className="form-error" id="live-error" role="alert" />
         <button className="primary save-btn" type="submit">Save account</button>
       </form>,
+      { back: "business-settings", cls: "narrow" },
+    );
+  }
+
+  function plans() {
+    const yearly = state.planYearly;
+    return ownerOnly(
+      "Plans",
+      <div className="card pad stack">
+        <div className="chip-row">
+          <button type="button" className={"chip" + (!yearly ? " selected" : "")} data-live="plan-monthly">{!yearly ? "\u2713 " : ""}Monthly</button>
+          <button type="button" className={"chip" + (yearly ? " selected" : "")} data-live="plan-yearly">{yearly ? "\u2713 " : ""}Yearly · 2 months free</button>
+        </div>
+        <div className="card pad-sm stack-sm">
+          <div className="kv-row nob"><strong>Free</strong><strong>{"\u20A6"}0</strong></div>
+          <span className="caption muted">1 staff · 10 products</span>
+        </div>
+        <div className="card pad-sm stack-sm plan-pro">
+          <div className="kv-row nob"><strong>Pro <span className="plan-tag">7-day free trial</span></strong><strong>{"\u2014"}</strong></div>
+          <span className="caption muted">{yearly ? "a year" : "a month"}</span>
+          <span className="caption muted">5 staff · unlimited products</span>
+        </div>
+        <button type="button" className="list-link card" data-live="plans-unavailable">
+          <div className="grow"><strong>Subscribe now</strong><p>Pay on Paystack’s secure page. Cancel any time.</p></div>
+          {ico("caret")}
+        </button>
+        <div className="form-actions"><button className="primary" type="button" data-live="plans-unavailable">Start 7-day free trial</button></div>
+      </div>,
+      { back: "subscription", cls: "narrow" },
+    );
+  }
+
+  const PERMS = [
+    ["SALES", [["Record sales", "Record payments and match them to products"]]],
+    ["STOCK", [["View inventory", "See products, selling prices and stock levels. Needed for the permissions below it"], ["Update stock", "Add received stock and correct counts"]]],
+    ["PRODUCTS & PRICES", [["Add products", "Create products, including during a sale"], ["Edit products", "Rename, change the photo and archive products"], ["Change selling price", "Edit what customers pay"], ["Change cost price", "See and edit cost prices. Profit stays owner-only"], ["Change low-stock alert", "Choose the stock level at which a product is marked Low"]]],
+  ];
+  function staffMember(name) {
+    const first = name.split(" ")[0];
+    const ini = name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+    return ownerOnly(
+      name,
+      <div className="card pad stack">
+        <div className="staff-head"><span className="avatar">{ini}</span><div><strong>{name}</strong><p className="caption muted">Staff</p></div></div>
+        <div className="card pad-sm stack-sm">
+          <div className="kv-row nob"><strong>What {first} can do</strong><span className="caption ok">2 of 8 on</span></div>
+          <p className="caption muted">Can</p>
+          <p>Record sales<br />View inventory (no cost prices)</p>
+          <p className="caption muted">Can’t</p>
+          <p>Add or edit products<br />Update stock<br />Change prices or low-stock alerts<br />Invite, remove or manage Staff — owner only</p>
+        </div>
+        <a className="list-link" href={"#/staff-permissions?name=" + encodeURIComponent(name)}>
+          <div className="grow"><strong>Manage permissions</strong><p>2 of 8 on · change or turn off anytime</p></div>
+          {ico("caret")}
+        </a>
+        <div className="form-actions"><button type="button" className="danger" data-live="remove-open">Remove from team</button></div>
+        {state.removeOpen && (
+          <div className="modal-backdrop">
+            <div className="modal card">
+              <h2>Remove {first} from your team?</h2>
+              <p>{first} won’t be able to open {state.tenant?.businessName || "your business"} or record sales. Their past sales stay recorded under their name. You can invite them again later.</p>
+              <p className="form-error" id="live-error" role="alert" />
+              <div className="form-actions">
+                <button type="button" className="secondary" data-live="remove-close">Cancel</button>
+                <button type="button" className="danger" data-live="remove-confirm">Remove</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>,
+      { back: "team", cls: "narrow" },
+    );
+  }
+  function staffPermissions(name) {
+    const first = name.split(" ")[0];
+    return ownerOnly(
+      first + "’s permissions",
+      <form id="live-staff-permissions" className="stack">
+        <p className="muted">{first} has 2 of 8 permissions. Changes apply as soon as you save.</p>
+        <div className="perm-grid">
+          {PERMS.map(([group, items]) => (
+            <div className="card perm-col" key={group}>
+              <p className="step-label">{group}</p>
+              {items.map(([t, d], i) => (
+                <label className="perm-row" key={t}>
+                  <span className="po-text"><strong>{t}</strong><small>{d}</small></span>
+                  <input type="checkbox" role="switch" name={t} defaultChecked={t === "Record sales" || t === "View inventory"} />
+                  <span className="switch" />
+                </label>
+              ))}
+            </div>
+          ))}
+        </div>
+        <p className="caption muted">Inviting, removing and managing staff always stays with you (owner). It can’t be given to staff.</p>
+        <p className="form-error" id="live-error" role="alert" />
+      </form>,
+      { back: "staff-member?name=" + encodeURIComponent(name), action: <button className="primary" type="submit" form="live-staff-permissions">Save changes</button> },
+    );
+  }
+
+  function withdrawal(status) {
+    const dash = "\u2014";
+    const meta = {
+      pending: ["Pending", "pill info"],
+      successful: ["Successful", "pill ok"],
+      failed: ["Failed, funds returned", "pill err"],
+    }[status] || ["Pending", "pill info"];
+    return ownerOnly(
+      "Withdrawal",
+      <div className="card pad stack">
+        <p className="sim-tag">{ico("info")} Simulated · test mode, no real money moves</p>
+        <div className="wd-top"><span className={meta[1]}>{meta[0]}</span><strong className="money-lg">{dash}</strong><span className="caption muted">Withdrawal amount</span></div>
+        {status === "failed" && notice("The bank couldn’t take this withdrawal. The money is back in your wallet.", "warning")}
+        <div className="card">
+          <div className="kv"><span>Withdrawal fee</span><strong>{dash}</strong></div>
+          <div className="kv"><span>Amount received</span><strong>{dash}</strong></div>
+          <div className="kv"><span>To</span><strong>{dash}</strong></div>
+          <div className="kv"><span>Requested</span><strong>{dash}</strong></div>
+          <div className="kv"><span>Reference</span><strong>{dash}</strong></div>
+        </div>
+        {status === "pending" && (
+          <div className="form-actions"><button className="secondary" type="button" data-live="cancel-withdrawal">Cancel withdrawal</button></div>
+        )}
+      </div>,
+      { back: "wallet", cls: "narrow" },
+    );
+  }
+  function paymentDetail() {
+    const dash = "\u2014";
+    return ownerOnly(
+      "Payment",
+      <div className="card pad stack">
+        <div className="wd-top"><strong className="money-lg">{dash}</strong><span className="caption muted">Customer payment through Invent IO</span></div>
+        <div className="card">
+          <div className="kv"><span>Received</span><strong>{dash}</strong></div>
+          <div className="kv"><span>Reference</span><strong>{dash}</strong></div>
+        </div>
+        {notice("Recording or voiding the sale doesn’t change this Wallet payment.", "info")}
+      </div>,
+      { back: "wallet", cls: "narrow" },
+    );
+  }
+  function subscriptionPro(ended) {
+    const dash = "\u2014";
+    const bar = (label, text, pct) => (
+      <div className="usage"><div className="usage-row"><span>{label}</span><strong>{text}</strong></div><div className="usage-bar"><span style={{ width: pct + "%" }} /></div></div>
+    );
+    return ownerOnly(
+      "Subscription",
+      <div className="card pad stack">
+        {ended && notice(<><strong>Pro ended</strong><br />Until you’re within Free or subscribe again: no recording payments and no new products. Sales history, stock and Paystack payments coming in are not affected. Nothing is deleted.</>, "warning")}
+        <div className="card pad-sm stack-sm">
+          <div className="kv-row nob"><strong>{ended ? "Free" : "Pro"}</strong><strong>{dash}</strong></div>
+          <span className="caption muted">{ended ? "1 staff · 10 products" : "a month"}</span>
+          {!ended && <span className="caption muted">5 staff · unlimited products</span>}
+        </div>
+        <div className="card pad-sm stack-sm">
+          {bar("Staff", ended ? "\u2014 of 1" : "\u2014 of 5", 0)}
+          {bar("Products", ended ? state.products.length + " of 10" : state.products.length + " · unlimited", ended ? Math.min(100, state.products.length * 10) : 0)}
+        </div>
+        {!ended && (
+          <div className="card">
+            <div className="kv"><span>Next payment</span><strong>{dash}</strong></div>
+            <div className="kv"><span>Payment card</span><strong>{dash}</strong></div>
+          </div>
+        )}
+        <div className="card">
+          {(ended ? [["Subscribe again", "plans"]] : [["Change plan", "plans", "Monthly or yearly"], ["Update card"], ["Receipts"], ["Cancel Pro", null, null, "cancel-open"]]).map(([t, to, sub, act]) => (
+            to ? (
+              <a className="list-link" key={t} href={"#/" + to}><div className="grow"><strong>{t}</strong>{sub && <p>{sub}</p>}</div>{ico("caret")}</a>
+            ) : (
+              <button type="button" className="list-link" key={t} data-live={act || "plans-unavailable"}><div className="grow"><strong>{t}</strong></div>{ico("caret")}</button>
+            )
+          ))}
+        </div>
+        {state.cancelProOpen && (
+          <div className="modal-backdrop">
+            <div className="modal card">
+              <h2>Cancel Pro?</h2>
+              <p>Pro stays until the end of this period. Then you move to Free. If you still have more than 1 staff or 10 products, you won’t be able to record payments or add products until you subscribe again.</p>
+              <p className="form-error" id="live-error" role="alert" />
+              <div className="form-actions">
+                <button type="button" className="secondary" data-live="cancel-close">Keep Pro</button>
+                <button type="button" className="danger" data-live="cancel-confirm">Cancel Pro</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>,
+      { back: "business-settings", cls: "narrow" },
+    );
+  }
+
+  function paystackPage() {
+    const dash = "\u2014";
+    return ownerOnly(
+      "Paystack",
+      <div className="card pad stack">
+        <div className="card">
+          <div className="kv"><span>Status</span><strong>Not connected</strong></div>
+          <div className="kv"><span>Secret key</span><strong>{state.psKey ? "sk_live_ •••• " + state.psKey : dash}</strong></div>
+          <div className="kv"><span>Webhook</span><strong>{dash}</strong></div>
+        </div>
+        <a className="list-link card" href={state.psKey ? "#/connect-paystack?replace=1" : "#/connect-paystack"}>
+          <div className="grow"><strong>{state.psKey ? "Replace secret key" : "Connect Paystack"}</strong><p>{state.psKey ? "Use this if you created a new key in Paystack" : "Use your own Paystack account"}</p></div>
+          {ico("caret")}
+        </a>
+        <label className="field">Your webhook URL
+          <input type="text" readOnly disabled placeholder="Your webhook link will appear here" />
+        </label>
+        <button className="secondary" type="button" data-live="invite-unavailable">Copy link</button>
+        <p className="caption muted">Only you can see or change this. Paystack pays out to your bank, so there’s no Invent IO wallet for this business.</p>
+      </div>,
       { back: "business-settings", cls: "narrow" },
     );
   }
@@ -2111,8 +2460,8 @@ function setupDone() {
           <div className="kv"><span>Paystack · set up by Invent IO</span><strong>Sandbox</strong></div>
         </div>
         <p className="step-label">PAYMENTS</p>
-        <a className="list-link card" href="#/connect-paystack">
-          <div className="grow"><strong>Connect Paystack</strong><p>Use your own Paystack account</p></div>
+        <a className="list-link card" href="#/paystack">
+          <div className="grow"><strong>Paystack</strong><p>Connection, secret key and webhook</p></div>
           {ico("caret")}
         </a>
         <a className="list-link card" href="#/onboarding">
@@ -2145,7 +2494,14 @@ function setupDone() {
 
   return {
     weeklySummary,
+    paystackPage,
+    withdrawal,
+    paymentDetail,
+    subscriptionPro,
+    staffMember,
+    staffPermissions,
     subscription,
+    plans,
     wallet,
     connectPaystack,
     withdrawalAccount,
@@ -2168,6 +2524,7 @@ function setupDone() {
     managedForm,
     direct,
     changePassword,
+    inviteStatus: (kind) => <InviteStatus kind={kind} />,
     checkEmail: () => <CheckEmail api={api} />,
     verifyPending: () => <VerifyPending api={api} />,
     verifyEmailScreen: (

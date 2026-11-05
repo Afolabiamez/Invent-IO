@@ -172,5 +172,6 @@ export function createApi({
       return session;
     },
     clear: () => setSession(null),
+    update: (patch) => session && setSession({ ...session, ...patch }),
   };
 }

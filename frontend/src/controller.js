@@ -123,6 +123,7 @@ export function createMerchantController({ ui, rerender }) {
     direct,
     changePassword,
     verifyEmailScreen,
+    inviteStatus,
     account,
     notificationSettings,
     moreScreen,
@@ -131,7 +132,14 @@ export function createMerchantController({ ui, rerender }) {
     saleDetail,
     recordPayment,
     weeklySummary,
+    paystackPage,
+    withdrawal,
+    paymentDetail,
+    subscriptionPro,
+    staffMember,
+    staffPermissions,
     subscription,
+    plans,
     wallet,
     connectPaystack,
     withdrawalAccount,
@@ -294,8 +302,11 @@ export function createMerchantController({ ui, rerender }) {
     if (renderRoute !== route) state.notifOpen = false;
     renderRoute = route;
     if (route === "welcome") return null;
-    if (["login", "create", "forgot", "reset"].includes(route))
+    if (["login", "create", "join", "forgot", "reset"].includes(route))
       return auth(route);
+    if (route.startsWith("invite-") && route !== "invite-staff" && route !== "invite-login")
+      return inviteStatus(route.slice(7));
+    if (route === "invite-login") return auth("login", true);
     if (route === "check") return checkEmail();
     if (route === "verify-pending")
       return api.session ? verifyPending() : auth("login");
@@ -316,7 +327,14 @@ export function createMerchantController({ ui, rerender }) {
       "weekly-summary": weeklySummary,
       team,
       "invite-staff": inviteStaff,
+      paystack: paystackPage,
+      withdrawal: () => withdrawal(params.get("status") || "pending"),
+      "payment-detail": paymentDetail,
+      "subscription-pro": () => subscriptionPro(params.get("ended") === "1"),
+      "staff-member": () => staffMember(params.get("name") || "Staff member"),
+      "staff-permissions": () => staffPermissions(params.get("name") || "Staff member"),
       subscription,
+      plans,
       wallet,
       "connect-paystack": connectPaystack,
       "withdrawal-account": withdrawalAccount,
@@ -582,21 +600,81 @@ export function createMerchantController({ ui, rerender }) {
         go("business-settings");
         return;
       }
+      if (action === "plan-monthly" || action === "plan-yearly") {
+        state.planYearly = action === "plan-yearly";
+        rerender();
+        return;
+      }
+      if (action === "photo-unavailable") {
+        toast("Product photos aren’t available yet.");
+        return;
+      }
       if (action === "plans-unavailable") {
         toast("Plans aren’t available yet.");
+        return;
+      }
+      if (action === "name-edit" || action === "name-cancel") {
+        state.editingName = action === "name-edit";
+        rerender();
         return;
       }
       if (action === "invite-staff") {
         go("invite-staff");
         return;
       }
+      if (action === "limit-close") {
+        state.limitOpen = false;
+        rerender();
+        return;
+      }
+      if (action === "account-edit") {
+        state.editingAccount = true;
+        rerender();
+        return;
+      }
       if (action === "invite-unavailable") {
         toast("Invite links aren’t available yet.");
         return;
       }
-      if (action === "toggle-notifs") {
-        state.notifOpen = !state.notifOpen;
+      if (action === "toggle-notifs" || action === "notifs-retry") {
+        state.notifOpen = action === "notifs-retry" ? true : !state.notifOpen;
+        if (state.notifOpen) {
+          state.notifState = "loading";
+          rerender();
+          try {
+            await loadCore();
+            state.notifState = state.coreErrors?.length ? "error" : "ready";
+          } catch {
+            state.notifState = "error";
+          }
+        }
         rerender();
+        return;
+      }
+      if (action === "paused-close") {
+        state.pausedDismissed = true;
+        rerender();
+        return;
+      }
+      if (action === "cancel-open" || action === "cancel-close") {
+        state.cancelProOpen = action === "cancel-open";
+        rerender();
+        return;
+      }
+      if (action === "cancel-confirm" || action === "cancel-withdrawal") {
+        const e = document.getElementById("live-error");
+        if (e) e.textContent = "This isn’t available yet.";
+        else toast("This isn’t available yet.");
+        return;
+      }
+      if (action === "remove-open" || action === "remove-close") {
+        state.removeOpen = action === "remove-open";
+        rerender();
+        return;
+      }
+      if (action === "remove-confirm") {
+        const e = document.getElementById("live-error");
+        if (e) e.textContent = "Removing staff isn’t available yet.";
         return;
       }
       if (action === "notifs-read") {
@@ -695,7 +773,7 @@ export function createMerchantController({ ui, rerender }) {
           state.initialized = false;
           state.enabled = false;
           closeModal();
-          go("login", true);
+          go(b.dataset.after || "login", true);
         }
         return;
       }
@@ -798,6 +876,8 @@ export function createMerchantController({ ui, rerender }) {
           toast("Password updated. Log in with your new password.");
           return;
         }
+        if (kind === "join")
+          throw new Error("Joining a team isn’t available yet. Ask your owner to try again later.");
         await push.disable().catch(() => {});
         const payload =
           kind === "create"
@@ -854,6 +934,17 @@ export function createMerchantController({ ui, rerender }) {
         return;
       }
 
+      if (form.id === "live-account-name") {
+        const name = (data.name || "").trim();
+        if (!name) throw new Error("Enter your name.");
+        api.update({ name });
+        state.profile = { ...person(), name };
+        state.editingName = false;
+        toast("Name updated.");
+        rerender();
+        return;
+      }
+
       if (form.id === "live-business-settings") {
         state.setup = {
           whatsapp: (data.whatsapp || "").trim(),
@@ -863,6 +954,9 @@ export function createMerchantController({ ui, rerender }) {
         return;
       }
 
+      if (form.id === "live-staff-permissions") {
+        throw new Error("Saving permissions isn’t available yet.");
+      }
       if (form.id === "live-withdraw") {
         const minor = nairaToMinor(data.amount);
         if (BigInt(minor) <= 0n) throw new Error("Enter an amount greater than zero.");
@@ -877,8 +971,12 @@ export function createMerchantController({ ui, rerender }) {
       }
       if (form.id === "live-connect-paystack") {
         const key = (data.secretKey || "").trim();
-        if (!/^sk_(live|test)_/.test(key))
-          throw new Error("That doesn’t look like a Paystack secret key. It starts with sk_live_.");
+        form.querySelector("input[name=secretKey]")?.setAttribute("aria-invalid", "true");
+        if (/^sk_test_/.test(key))
+          throw new Error("That’s a test key. Paste your live secret key, which starts with sk_live_.");
+        if (!/^sk_live_/.test(key))
+          throw new Error("Paystack didn’t accept this key. Copy it again and check it starts with sk_live_.");
+        form.querySelector("input[name=secretKey]")?.removeAttribute("aria-invalid");
         state.psKey = key.slice(-3);
         state.psStep = 2;
         rerender();
