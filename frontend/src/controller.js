@@ -131,6 +131,8 @@ export function createMerchantController({ ui, rerender }) {
     saleDetail,
     recordPayment,
     weeklySummary,
+    inviteStaff,
+    setupPayments,
     team,
     businessSettings,
     matchScreen,
@@ -285,6 +287,7 @@ export function createMerchantController({ ui, rerender }) {
     }
   }
   function render(route, params) {
+    if (renderRoute !== route) state.notifOpen = false;
     renderRoute = route;
     if (route === "welcome") return null;
     if (["login", "create", "forgot", "reset"].includes(route))
@@ -308,6 +311,8 @@ export function createMerchantController({ ui, rerender }) {
       "record-payment": recordPayment,
       "weekly-summary": weeklySummary,
       team,
+      "invite-staff": inviteStaff,
+      "setup-payments": setupPayments,
       "business-settings": businessSettings,
       "sale-detail": () => saleDetail(params.get("id")),
       sales: salesScreen,
@@ -543,7 +548,21 @@ export function createMerchantController({ ui, rerender }) {
         return;
       }
       if (action === "invite-staff") {
-        toast("Staff invites aren’t available yet.");
+        go("invite-staff");
+        return;
+      }
+      if (action === "invite-unavailable") {
+        toast("Invite links aren’t available yet.");
+        return;
+      }
+      if (action === "toggle-notifs") {
+        state.notifOpen = !state.notifOpen;
+        rerender();
+        return;
+      }
+      if (action === "notifs-read") {
+        state.notifRead = true;
+        rerender();
         return;
       }
       if (action === "refresh-core") {
@@ -805,9 +824,15 @@ export function createMerchantController({ ui, rerender }) {
         return;
       }
 
+      if (form.id === "live-setup-payments") {
+        state.setup = { ...(state.setup || {}), payments: data.payments || "paystack" };
+        go("setup-products", true);
+        return;
+      }
+
       if (form.id === "live-setup-business") {
   state.setup = { whatsapp: data.whatsapp.trim(), summaryEmail: data.summaryEmail.trim() };
-  go("setup-products", true);
+  go("setup-payments", true);
   return;
 }
 if (form.id === "live-setup-product") {

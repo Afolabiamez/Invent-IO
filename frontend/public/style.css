@@ -3317,3 +3317,21 @@ body:has(.back-office) .demo-banner + .back-office .admin-sidebar { top:30px; he
 .sim-tag{display:inline-flex;align-items:center;gap:6px;margin:8px 0 0;padding:2px 8px;border-radius:999px;background:#e8f0fe;color:#1d4ed8;font-size:12px}
 .bell-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px}
 .bell-badge{position:absolute;top:2px;right:0;min-width:18px;height:18px;border-radius:9px;background:#c4211c;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px}
+
+/* Onboarding step 2, notification panel, invite (Figma W-PY-01, W-NT-01, W-MO-04) */
+.pay-options{display:flex;flex-direction:column;gap:16px}
+.pay-option{position:relative;display:flex;align-items:center;gap:16px;padding:16px;border:1px solid #e7e5e4;border-radius:16px;background:#fff;cursor:pointer}
+.pay-option input{position:absolute;opacity:0}
+.pay-option:has(input:checked){background:#e6f4f2;border:2px solid #0f6b5c;padding:15px}
+.po-icon{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:#f5f5f4;flex:none}
+.po-text{display:flex;flex-direction:column;gap:2px;flex:1}.po-text strong{font-size:15px}.po-text small{font-size:13px;line-height:20px;color:#57534e}
+.po-radio{width:22px;height:22px;border-radius:50%;border:2px solid #78716c;flex:none}
+.pay-option:has(input:checked) .po-radio{border:6px solid #0f6b5c;background:#fff}
+.bell-wrap{position:relative}
+.notif-panel{position:fixed;top:76px;right:32px;width:400px;max-height:700px;overflow:auto;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:30}
+.notif-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px;border-bottom:1px solid #e7e5e4}
+.notif-item{display:flex;gap:12px;align-items:flex-start;padding:16px 20px;color:inherit;text-decoration:none}
+.notif-item.unread{background:#e6f4f2}
+.notif-dot{width:10px;height:10px;border-radius:50%;background:#0f6b5c;margin-top:6px}
+.notif-empty{padding:32px 20px;text-align:center;color:#57534e;margin:0}
+.narrow .card input,.narrow .card select{max-width:100%;box-sizing:border-box}.form-actions{flex-wrap:wrap}

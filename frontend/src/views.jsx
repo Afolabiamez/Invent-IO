@@ -47,6 +47,30 @@ export function createViews({
       ...(can("sales.allocate") ? [["sales", "Sales", "navSales"]] : []),
       ...(can("catalog.read") ? [["products", "Products", "navProducts"]] : []),
     ];
+    const unread = state.notifRead ? 0 : state.payments.length;
+    const notifPanel = () => (
+      <div className="notif-panel" role="dialog" aria-label="Notifications">
+        <div className="notif-head">
+          <strong>Notifications</strong>
+          <button type="button" className="text-btn" data-live="notifs-read">Mark all as read</button>
+          <a href="#/notification-settings" aria-label="Notification settings">{ico("navSettings")}</a>
+        </div>
+        {state.payments.length ? (
+          state.payments.slice(0, 5).map((p) => (
+            <a key={p.id} className={"notif-item" + (unread ? " unread" : "")} href="#/sales">
+              <span className="po-icon">{ico("cash")}</span>
+              <span className="po-text">
+                <strong>{formatMinor(p.amountMinor)} payment received</strong>
+                <small>Not matched to a sale yet. Record what was sold.</small>
+              </span>
+              {unread > 0 && <span className="notif-dot" />}
+            </a>
+          ))
+        ) : (
+          <p className="notif-empty">You’re all caught up. New payments and low stock alerts will show here.</p>
+        )}
+      </div>
+    );
     const mobileNav = [...nav, ["more", "More", "more"]];
     const moreNav = can("payments.manage")
       ? [
@@ -178,12 +202,13 @@ export function createViews({
             </div>
             <div className="chips">
               {can("payments.manage") && (
-                <a className="bell-btn t-desk" href="#/sales" aria-label="Notifications">
-                  <img src="assets/notification.svg" alt="" />
-                  {state.payments.length > 0 && (
-                    <span className="bell-badge">{state.payments.length}</span>
-                  )}
-                </a>
+                <div className="bell-wrap t-desk">
+                  <button className="bell-btn" type="button" data-live="toggle-notifs" aria-label="Notifications" aria-expanded={!!state.notifOpen}>
+                    <img src="assets/notification.svg" alt="" />
+                    {unread > 0 && <span className="bell-badge">{unread}</span>}
+                  </button>
+                  {state.notifOpen && notifPanel()}
+                </div>
               )}
               {action}
               {can("sales.allocate") && ["home", "sales"].includes(route()) && (
@@ -1716,14 +1741,42 @@ export function createViews({
       <p className="form-error" id="live-error" role="alert"/>
       <div className="auth-bottom">
         <button className="primary" type="submit">Continue</button>
-        <button type="button" className="text-btn" data-live="go" data-to="setup-products">Skip WhatsApp for now</button>
+        <button type="button" className="text-btn" data-live="go" data-to="setup-payments">Skip WhatsApp for now</button>
+      </div>
+    </form>
+  </AuthFrame>;
+}
+function setupPayments() {
+  const sel = state.setup?.payments || "paystack";
+  const opts = [
+    ["paystack", "I have a Paystack account", "Connect it so card and transfer payments show here. Money goes straight to your bank.", "homeCash"],
+    ["collection", "Use Invent IO collection", "Invent IO collects payments for you. You withdraw to your bank.", "featureBank"],
+    ["later", "Not now", "Record cash and transfers yourself. Set this up later in Business settings.", "cash"],
+  ];
+  return <AuthFrame title="Set up your business" back="setup-business">
+    <h1 className="auth-title desktop-only">Set up your business</h1>
+    <p className="step-label">STEP 2 OF 3</p>
+    <p className="status-text">How do your customers pay you?</p>
+    <form id="live-setup-payments" className="stack" noValidate>
+      <div className="pay-options">
+        {opts.map(([v, t, d, i]) => (
+          <label className="pay-option" key={v}>
+            <input type="radio" name="payments" value={v} defaultChecked={sel === v} />
+            <span className="po-icon">{ico(i)}</span>
+            <span className="po-text"><strong>{t}</strong><small>{d}</small></span>
+            <span className="po-radio" />
+          </label>
+        ))}
+      </div>
+      <div className="auth-bottom">
+        <button className="primary" type="submit">Continue</button>
       </div>
     </form>
   </AuthFrame>;
 }
 function setupProducts() {
   const n=state.setupCount||0;
-  return <AuthFrame title="Add your products" back="setup-business">
+  return <AuthFrame title="Add your products" back="setup-payments">
     <h1 className="auth-title desktop-only">Add your products</h1>
     <p className="step-label">STEP 3 OF 3</p>
     {n>0 && <p className="status-text">{n===1?'1 product added.':`${n} products added.`} Add another, or continue.</p>}
@@ -1860,6 +1913,24 @@ function setupDone() {
       },
     );
   }
+  function inviteStaff() {
+    return ownerOnly(
+      "Invite staff",
+      <div className="card pad stack">
+        <p className="muted">Share this link with your staff member. It works once and expires in 7 days.</p>
+        <label className="field">Invite link
+          <input type="text" readOnly disabled placeholder="Your invite link will appear here" />
+        </label>
+        {notice(<><strong>What they can do at first</strong><br />Record sales and View inventory. You can change this in Team after they join.</>, "info")}
+        <div className="form-actions">
+          <button className="secondary" type="button" data-live="invite-unavailable">Copy link</button>
+          <button className="primary" type="button" data-live="invite-unavailable">Share on WhatsApp</button>
+        </div>
+      </div>,
+      { back: "team", cls: "narrow" },
+    );
+  }
+
   function businessSettings() {
     const biz = state.tenant?.businessName || api.session?.businessName || "";
     return ownerOnly(
@@ -1904,6 +1975,8 @@ function setupDone() {
 
   return {
     weeklySummary,
+    inviteStaff,
+    setupPayments,
     team,
     businessSettings,
     setupBusiness,
