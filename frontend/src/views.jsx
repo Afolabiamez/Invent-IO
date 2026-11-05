@@ -50,12 +50,18 @@ export function createViews({
     const mobileNav = [...nav, ["more", "More", "more"]];
     const moreNav = can("payments.manage")
       ? [
-          ["onboarding", "Payment setup", "cash"],
-          ["admin", "Account overview", "navSettings"],
+          ["weekly-summary", "Weekly summary", "navWeekly"],
+          ["team", "Team", "navTeam"],
+          ["business-settings", "Business settings", "navSettings"],
         ]
       : [];
     const navKey =
-      { "onboarding-managed": "onboarding", "onboarding-direct": "onboarding" }[
+      {
+        onboarding: "business-settings",
+        admin: "business-settings",
+        "onboarding-managed": "business-settings",
+        "onboarding-direct": "business-settings",
+      }[
         active
       ] || active;
     const initials =
@@ -171,6 +177,14 @@ export function createViews({
               </div>
             </div>
             <div className="chips">
+              {can("payments.manage") && (
+                <a className="bell-btn t-desk" href="#/sales" aria-label="Notifications">
+                  <img src="assets/notification.svg" alt="" />
+                  {state.payments.length > 0 && (
+                    <span className="bell-badge">{state.payments.length}</span>
+                  )}
+                </a>
+              )}
               {action}
               {can("sales.allocate") && ["home", "sales"].includes(route()) && (
                 <button
@@ -483,6 +497,27 @@ export function createViews({
             state.coreErrors.map((error, i) => <p key={i}>{error}</p>),
             "warning",
           )}
+        <div className={can("payments.manage") ? "home-grid" : ""}>
+        {can("payments.manage") && (
+          <section>
+            <div className="section-title">
+              <h2>Wallet</h2>
+            </div>
+            <div className="card pad stack-sm wallet-card">
+              <span className="caption muted">Available balance</span>
+              <strong className="money-lg">{"\u2014"}</strong>
+              <span className="caption muted">Ready to withdraw now</span>
+              <div className="kv-row">
+                <span>Total received (all time)</span>
+                <strong>{"\u2014"}</strong>
+              </div>
+              <button className="primary" type="button" data-live="withdraw">
+                Withdraw
+              </button>
+            </div>
+            <p className="sim-tag">{ico("info")} Simulated · test mode, no real money moves</p>
+          </section>
+        )}
         {state.summary && (
           <section>
             <div className="section-title">
@@ -502,6 +537,7 @@ export function createViews({
             </div>
           </section>
         )}
+        </div>
         {can("sales.allocate") && (
           <section>
             <div className="section-title">
@@ -1548,14 +1584,15 @@ export function createViews({
         <div className="stack-sm">
           <span className="field-label">How did they pay?</span>
           <div className="chip-row">
-            <span className="chip selected" aria-current="true">
-              ✓ Cash
-            </span>
+            {["Cash", "Transfer", "Card"].map((m, i) => (
+              <label className="chip" key={m}>
+                <input type="radio" name="method" value={m.toLowerCase()} defaultChecked={i === 0} />
+                <span>{m}</span>
+              </label>
+            ))}
           </div>
-          <p className="caption muted">
-            Transfers through Paystack are recorded automatically.
-          </p>
         </div>
+        {field("customer", "Customer name (optional)", "", "text", "", 'placeholder="Ada O."')}
         <p className="form-error" id="live-error" role="alert" />
         <button
           className="primary"
@@ -1724,7 +1761,151 @@ function setupDone() {
   </AuthFrame>;
 }
 
+  function ownerOnly(title, body, opts) {
+    if (!can("payments.manage"))
+      return shell(
+        title,
+        empty("You don’t have access", "Ask your business owner for access."),
+      );
+    return shell(title, body, opts);
+  }
+  function weeklySummary() {
+    const dash = "\u2014";
+    return ownerOnly(
+      "Weekly summary",
+      <div className="card pad stack wk-card">
+        <p className="caption">Last week</p>
+        <div className="wk-stats">
+          <div className="card pad-sm">
+            <span className="caption muted">Sales</span>
+            <strong className="money-lg">{dash}</strong>
+            <span className="caption muted">Not available yet</span>
+          </div>
+          <div className="card pad-sm">
+            <span className="caption muted">Pending payments</span>
+            <strong className="money-lg">{state.payments.length}</strong>
+            <span className="caption muted">
+              {state.payments.length ? "Waiting for products" : "All recorded"}
+            </span>
+          </div>
+        </div>
+        {state.payments.length > 0 &&
+          notice(
+            <>
+              {state.payments.length} payment
+              {state.payments.length === 1 ? " is" : "s are"} still pending.
+              Record what was sold so they count in your sales.{" "}
+              {link("Review pending payments", "sales")}
+            </>,
+            "warning",
+          )}
+        <p className="step-label">TOP PRODUCTS</p>
+        <div className="card pad-sm caption muted">
+          Top sellers will show here once your first week of sales is in.
+        </div>
+        <p className="step-label">LOW STOCK</p>
+        <div className="card pad-sm caption muted">
+          Nothing is running low.
+        </div>
+        <p className="step-label">SENT TO YOU</p>
+        <div className="card">
+          <div className="kv"><span>WhatsApp</span><strong>Not sent yet</strong></div>
+          <div className="kv"><span>Email</span><strong>Not sent yet</strong></div>
+        </div>
+        <p className="caption muted">
+          Voided sales and payments marked Not a sale are not counted.
+        </p>
+      </div>,
+      { cls: "narrow" },
+    );
+  }
+  function team() {
+    const ini = (person().name || "A")
+      .trim()
+      .split(/\s+/)
+      .map((w) => w[0])
+      .filter((c, i, a) => i === 0 || i === a.length - 1)
+      .join("")
+      .toUpperCase();
+    return ownerOnly(
+      "Team",
+      <div className="stack">
+        <div className="pay-table team-table" role="table">
+          <div className="pay-row pay-head" role="row">
+            <span>Name</span>
+            <span>Role and access</span>
+          </div>
+          <div className="pay-row" role="row">
+            <span className="prod-name">
+              <span className="avatar">{ini}</span>
+              <strong>{person().name}</strong>
+            </span>
+            <span>Owner · you</span>
+          </div>
+        </div>
+        <p className="caption muted">
+          Only you can invite or remove staff and change what they can do.
+        </p>
+      </div>,
+      {
+        action: (
+          <button
+            className="primary"
+            type="button"
+            data-live="invite-staff"
+          >
+            {ico("invite")} Invite staff
+          </button>
+        ),
+      },
+    );
+  }
+  function businessSettings() {
+    const biz = state.tenant?.businessName || api.session?.businessName || "";
+    return ownerOnly(
+      "Business settings",
+      <form id="live-business-settings" className="card pad stack" noValidate>
+        {field("businessName", "Business name", biz, "text", "", "required")}
+        {field("whatsapp", "WhatsApp number", state.setup?.whatsapp || "", "tel", "", 'placeholder="0803 123 4567"')}
+        {field("summaryEmail", "Email for weekly summary", state.setup?.summaryEmail || person().email || "", "email", "")}
+        <p className="step-label">INTEGRATIONS</p>
+        <div className="card">
+          <div className="kv"><span>WhatsApp summary</span><strong>Sandbox</strong></div>
+          <div className="kv"><span>Paystack · set up by Invent IO</span><strong>Sandbox</strong></div>
+        </div>
+        <p className="step-label">PAYMENTS</p>
+        <a className="list-link card" href="#/onboarding">
+          <div className="grow"><strong>Payment setup</strong><p>Choose how customers pay you</p></div>
+          {ico("caret")}
+        </a>
+        <a className="list-link card" href="#/admin">
+          <div className="grow"><strong>Account overview</strong><p>Your account and payment details</p></div>
+          {ico("caret")}
+        </a>
+        <p className="step-label">WITHDRAWALS</p>
+        <div className="list-link card">
+          <div className="grow"><strong>Withdrawal account</strong><p>Not set up yet</p></div>
+          {ico("caret")}
+        </div>
+        <p className="caption muted">
+          Only you can see or change this. Shown only for businesses using Invent IO payment collection.
+        </p>
+        <p className="step-label">SUBSCRIPTION</p>
+        <div className="list-link card">
+          <div className="grow"><strong>Subscription</strong><p>Free plan</p></div>
+          {ico("caret")}
+        </div>
+        <p className="form-error" id="live-error" role="alert" />
+        <button className="primary save-btn" type="submit">Save changes</button>
+      </form>,
+      { cls: "narrow" },
+    );
+  }
+
   return {
+    weeklySummary,
+    team,
+    businessSettings,
     setupBusiness,
     setupProducts,
     setupDone,

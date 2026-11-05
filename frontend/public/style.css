@@ -3296,5 +3296,24 @@ body:has(.back-office) .demo-banner + .back-office .admin-sidebar { top:30px; he
 .amount-field span,.field-label{font-size:14px;color:#57534e}
 .amount-field input{font-size:40px;line-height:48px;font-weight:700;border:0;border-bottom:2px solid #0f6b5c;border-radius:0;padding:4px 0;background:transparent;outline:none}
 .chip-row{display:flex;gap:8px}
-.chip{display:inline-flex;align-items:center;height:40px;padding:0 16px;border:1px solid #1c1917;border-radius:999px;font-size:14px;font-weight:600}
+.chip input{position:absolute;opacity:0;pointer-events:none}.chip:has(input:checked){background:#e6f4f2;border-color:#0f6b5c;color:#0f6b5c}.chip{position:relative;cursor:pointer;display:inline-flex;align-items:center;height:40px;padding:0 16px;border:1px solid #1c1917;border-radius:999px;font-size:14px;font-weight:600}
 .chip.selected{background:#e6f4f2;border-color:#0f6b5c;color:#0f6b5c}
+
+/* Weekly summary / Team / Business settings (Figma W-MO-*) */
+.wk-stats{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.wk-stats .card{display:flex;flex-direction:column;gap:4px}
+.kv{display:flex;flex-direction:column;gap:2px;padding:12px 16px;border-bottom:1px solid #e7e5e4}
+.kv:last-child{border-bottom:0}
+.kv span{font-size:14px;color:#57534e}.kv strong{font-size:16px}
+.save-btn{align-self:flex-end;width:auto;padding:0 24px}
+.team-table .pay-row{grid-template-columns:1fr 1fr}
+.topbar .primary{display:inline-flex;align-items:center;gap:8px}
+@media (max-width:767px){.wk-stats{grid-template-columns:1fr}}
+
+/* Home wallet and bell (Figma W-HM-01) */
+.home-grid{display:grid;gap:24px}
+@media (min-width:768px){.home-grid{grid-template-columns:368px 1fr;align-items:start}}
+.kv-row{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #e7e5e4;padding-top:12px;margin-top:4px;font-size:14px}
+.sim-tag{display:inline-flex;align-items:center;gap:6px;margin:8px 0 0;padding:2px 8px;border-radius:999px;background:#e8f0fe;color:#1d4ed8;font-size:12px}
+.bell-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px}
+.bell-badge{position:absolute;top:2px;right:0;min-width:18px;height:18px;border-radius:9px;background:#c4211c;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px}

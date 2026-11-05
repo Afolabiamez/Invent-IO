@@ -130,6 +130,9 @@ export function createMerchantController({ ui, rerender }) {
     salesScreen,
     saleDetail,
     recordPayment,
+    weeklySummary,
+    team,
+    businessSettings,
     matchScreen,
     setupBusiness,
     setupProducts,
@@ -303,6 +306,9 @@ export function createMerchantController({ ui, rerender }) {
     const screens = {
       home,
       "record-payment": recordPayment,
+      "weekly-summary": weeklySummary,
+      team,
+      "business-settings": businessSettings,
       "sale-detail": () => saleDetail(params.get("id")),
       sales: salesScreen,
       "match-payment": matchScreen,
@@ -532,6 +538,14 @@ export function createMerchantController({ ui, rerender }) {
     if (!b || b.disabled) return;
     const action = b.dataset.live;
     try {
+      if (action === "withdraw") {
+        toast("Withdrawals aren’t available yet.");
+        return;
+      }
+      if (action === "invite-staff") {
+        toast("Staff invites aren’t available yet.");
+        return;
+      }
       if (action === "refresh-core") {
         await loadCore();
         rerender();
@@ -762,6 +776,8 @@ export function createMerchantController({ ui, rerender }) {
       if (form.id === "live-cash-payment") {
         if (!can("sales.allocate"))
           throw new Error("You don’t have permission to record payments.");
+        if (data.method && data.method !== "cash")
+          throw new Error("Only cash can be recorded here for now. Transfers arrive on their own.");
         const amountMinor = nairaToMinor(data.amount);
         if (BigInt(amountMinor) <= 0n)
           throw new Error("Enter an amount greater than zero.");
@@ -777,6 +793,15 @@ export function createMerchantController({ ui, rerender }) {
         state.saleKey = null;
         form.reset();
         go("match-payment", true);
+        return;
+      }
+
+      if (form.id === "live-business-settings") {
+        state.setup = {
+          whatsapp: (data.whatsapp || "").trim(),
+          summaryEmail: (data.summaryEmail || "").trim(),
+        };
+        toast("Changes can’t be saved yet.");
         return;
       }
 
