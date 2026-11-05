@@ -60,7 +60,8 @@ export function createMerchantController({ ui, rerender }) {
     submitting: false,
   };
   let generation = 0,
-    lastRoute = "";
+    lastRoute = "",
+    renderRoute = "";
   const api = createApi({
     storage: localStorage,
     onExpired: () => {
@@ -141,7 +142,7 @@ export function createMerchantController({ ui, rerender }) {
     person,
     ui,
     selectedItems,
-    route: () => lastRoute,
+    route: () => renderRoute || lastRoute,
     verify: async (token) => {
       await api.request("/auth/verify-email", {
         method: "POST",
@@ -160,7 +161,7 @@ export function createMerchantController({ ui, rerender }) {
       const tenant = await api.request("/tenancy/me");
       if (turn !== generation) return;
       if (!Array.isArray(tenant?.permissions))
-        throw new Error("The backend did not return your access permissions.");
+        throw new Error("We couldn’t load your account. Please log in again.");
       state.tenant = tenant;
       if (tenant.profile) state.profile = tenant.profile;
       state.initialized = true;
@@ -281,6 +282,7 @@ export function createMerchantController({ ui, rerender }) {
     }
   }
   function render(route, params) {
+    renderRoute = route;
     if (route === "welcome") return null;
     if (["login", "create", "forgot", "reset"].includes(route))
       return auth(route);

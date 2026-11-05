@@ -46,12 +46,28 @@ export function createViews({
       ["home", "Home", "navHome"],
       ...(can("sales.allocate") ? [["sales", "Sales", "navSales"]] : []),
       ...(can("catalog.read") ? [["products", "Products", "navProducts"]] : []),
-      ["account", "Account", "navSettings"],
     ];
-    const mobileNav = [
-      ...nav.filter((n) => n[0] !== "account"),
-      ["more", "More", "more"],
-    ];
+    const mobileNav = [...nav, ["more", "More", "more"]];
+    const moreNav = can("payments.manage")
+      ? [
+          ["onboarding", "Payment setup", "cash"],
+          ["admin", "Account overview", "navSettings"],
+        ]
+      : [];
+    const navKey =
+      { "onboarding-managed": "onboarding", "onboarding-direct": "onboarding" }[
+        active
+      ] || active;
+    const initials =
+      (person().name || "A")
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((w) => w[0])
+        .filter((c, i, a) => i === 0 || i === a.length - 1)
+        .join("")
+        .slice(0, 2)
+        .toUpperCase() || "A";
     return (
       <>
         <aside className="sidebar">
@@ -72,7 +88,8 @@ export function createViews({
               <a
                 key={r}
                 href={`#/${r}`}
-                className={active === r ? "active" : ""}
+                className={navKey === r ? "active" : ""}
+                aria-current={navKey === r ? "page" : undefined}
               >
                 {ico(i)}
                 <span className="nav-label">{t}</span>
@@ -81,18 +98,25 @@ export function createViews({
                 )}
               </a>
             ))}
-            {can("payments.manage") && (
+            {moreNav.length > 0 && (
               <>
-                <span className="side-heading">PAYMENTS</span>
-                {link("Payment setup", "onboarding", "list-link")}
-                {link("Account overview", "admin", "list-link")}
+                <span className="side-heading">MORE</span>
+                {moreNav.map(([r, t, i]) => (
+                  <a
+                    key={r}
+                    href={`#/${r}`}
+                    className={navKey === r ? "active" : ""}
+                    aria-current={navKey === r ? "page" : undefined}
+                  >
+                    {ico(i)}
+                    <span className="nav-label">{t}</span>
+                  </a>
+                ))}
               </>
             )}
           </nav>
           <a className="account-link" href="#/account">
-            <span className="avatar">
-              {(person().name || "A")[0].toUpperCase()}
-            </span>
+            <span className="avatar">{initials}</span>
             <div>
               <strong>{person().name}</strong>
               <small>
@@ -973,7 +997,7 @@ export function createViews({
       "Set up your payment account",
       <form id="live-managed" className="card pad stack" noValidate>
         {notice(
-          "This creates a Paystack test subaccount and dedicated virtual account. Live activation and provider checks remain with the backend/payment provider.",
+          "This sets up a Paystack test account for your business. It doesn’t switch on live payments.",
         )}
         <div className="form-grid">
           {field(
@@ -1040,8 +1064,8 @@ export function createViews({
           Invent IO and Paystack for account setup.
         </label>
         <p className="small muted">
-          Settlement account numbers are sent securely to the backend and are
-          not saved in this browser.
+          Settlement account numbers are sent securely and are not saved in this
+          browser.
         </p>
         <p className="form-error" id="live-error" />
         <button className="primary" type="submit">
@@ -1061,7 +1085,7 @@ export function createViews({
           is not required.
         </p>
         {notice(
-          "The backend has not exposed a DIRECT connection/setup endpoint yet. Ask the backend team to configure your webhook connection and provide your organization’s webhook URL.",
+          "Connecting your own Paystack account isn’t available yet.",
           "warning",
         )}
         <p className="caption">
@@ -1217,10 +1241,6 @@ export function createViews({
     return shell(
       "Account overview",
       <div className="stack">
-        {notice(
-          "This view is limited to your authenticated organization. Cross-merchant account listing, approvals and admin roles need a backend admin API; no cross-merchant actions are available.",
-          "warning",
-        )}
         {accountCard()}
         {link("Merchant self-onboarding", "onboarding", "primary")}
       </div>,
@@ -1510,7 +1530,7 @@ export function createViews({
             </label>
           ) : (
             notice(
-              "Your branch list is unavailable. Update the backend workspace endpoint before recording a cash payment.",
+              "We couldn’t find your branch. Log out and log in again, then try once more.",
               "warning",
             )
           ))}
