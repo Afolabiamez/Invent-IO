@@ -3346,3 +3346,4 @@ body:has(.back-office) .demo-banner + .back-office .admin-sidebar { top:30px; he
 .modal-head{display:flex;justify-content:space-between;align-items:flex-start}.modal-head h2{margin:0;font-size:18px}
 .modal .form-actions{justify-content:flex-end}
 .pad-sm{padding:16px}.card.pad-sm.stack-sm{display:flex;flex-direction:column;gap:8px}
+.steps-list{margin:0;padding-left:0;list-style:none;font-size:14px;line-height:20px;color:#57534e;display:flex;flex-direction:column;gap:2px}

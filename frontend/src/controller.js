@@ -134,6 +134,7 @@ export function createMerchantController({ ui, rerender }) {
     subscription,
     wallet,
     connectPaystack,
+    withdrawalAccount,
     inviteStaff,
     setupPayments,
     team,
@@ -318,6 +319,7 @@ export function createMerchantController({ ui, rerender }) {
       subscription,
       wallet,
       "connect-paystack": connectPaystack,
+      "withdrawal-account": withdrawalAccount,
       "setup-payments": setupPayments,
       "business-settings": businessSettings,
       "sale-detail": () => saleDetail(params.get("id")),
@@ -555,7 +557,29 @@ export function createMerchantController({ ui, rerender }) {
       }
       if (action === "withdraw-open" || action === "withdraw-close") {
         state.withdrawOpen = action === "withdraw-open";
+        state.withdrawReview = null;
         rerender();
+        return;
+      }
+      if (action === "withdraw-change") {
+        state.withdrawReview = null;
+        rerender();
+        return;
+      }
+      if (action === "withdraw-confirm") {
+        const e = document.getElementById("live-error");
+        if (e) e.textContent = "Withdrawals aren’t available yet.";
+        return;
+      }
+      if (action === "ps-next") {
+        state.psStep = 3;
+        rerender();
+        return;
+      }
+      if (action === "ps-done") {
+        state.psStep = 1;
+        state.psKey = "";
+        go("business-settings");
         return;
       }
       if (action === "plans-unavailable") {
@@ -840,10 +864,25 @@ export function createMerchantController({ ui, rerender }) {
       }
 
       if (form.id === "live-withdraw") {
-        throw new Error("Withdrawals aren’t available yet.");
+        const minor = nairaToMinor(data.amount);
+        if (BigInt(minor) <= 0n) throw new Error("Enter an amount greater than zero.");
+        state.withdrawReview = minor;
+        rerender();
+        return;
+      }
+      if (form.id === "live-withdrawal-account") {
+        if (!/^\d{10}$/.test((data.accountNumber || "").trim()))
+          throw new Error("Account number must be 10 digits.");
+        throw new Error("Saving a withdrawal account isn’t available yet.");
       }
       if (form.id === "live-connect-paystack") {
-        throw new Error("Connecting Paystack isn’t available yet.");
+        const key = (data.secretKey || "").trim();
+        if (!/^sk_(live|test)_/.test(key))
+          throw new Error("That doesn’t look like a Paystack secret key. It starts with sk_live_.");
+        state.psKey = key.slice(-3);
+        state.psStep = 2;
+        rerender();
+        return;
       }
 
       if (form.id === "live-setup-payments") {

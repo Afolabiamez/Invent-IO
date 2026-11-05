@@ -83,6 +83,7 @@ export function createViews({
       {
         wallet: "home",
         subscription: "business-settings",
+        "withdrawal-account": "business-settings",
         "connect-paystack": "business-settings",
         "invite-staff": "team",
         onboarding: "business-settings",
@@ -1986,6 +1987,27 @@ function setupDone() {
         <p className="sim-tag">{ico("info")} Simulated · test mode, no real money moves</p>
         {state.withdrawOpen && (
           <div className="modal-backdrop">
+            {state.withdrawReview ? (
+              <div className="modal card">
+                <div className="modal-head">
+                  <h2>Review withdrawal</h2>
+                  <button type="button" className="icon-btn" data-live="withdraw-close" aria-label="Close">{"\u2715"}</button>
+                </div>
+                <div className="card">
+                  <div className="kv"><span>Withdrawal amount</span><strong>{formatMinor(state.withdrawReview)}</strong></div>
+                  <div className="kv"><span>Withdrawal fee</span><strong>{dash}</strong></div>
+                  <div className="kv"><span>To</span><strong>No withdrawal account yet</strong></div>
+                </div>
+                <p className="caption muted">The withdrawal fee is set by our payment provider and taken from the withdrawal amount.</p>
+                {notice("You can cancel while it’s Pending. Once it’s Processing, it can’t be stopped.", "info")}
+                <p className="sim-tag">{ico("info")} Simulated · test mode, no real money moves</p>
+                <p className="form-error" id="live-error" role="alert" />
+                <div className="form-actions">
+                  <button type="button" className="secondary" data-live="withdraw-change">Change amount</button>
+                  <button type="button" className="primary" data-live="withdraw-confirm">Confirm withdrawal</button>
+                </div>
+              </div>
+            ) : (
             <form id="live-withdraw" className="modal card" noValidate>
               <div className="modal-head">
                 <div><h2>Withdraw</h2><p className="caption muted">Money goes to your withdrawal account.</p></div>
@@ -1997,7 +2019,7 @@ function setupDone() {
               <p className="caption muted">You can withdraw up to {dash}</p>
               <div className="card">
                 <div className="kv"><span>Available balance</span><strong>{dash}</strong></div>
-                <div className="kv"><span>To</span><strong>No withdrawal account yet</strong></div>
+                <div className="kv"><span>To</span><a href="#/withdrawal-account"><strong>Add a withdrawal account</strong></a></div>
               </div>
               <p className="form-error" id="live-error" role="alert" />
               <div className="form-actions">
@@ -2005,6 +2027,7 @@ function setupDone() {
                 <button type="submit" className="primary">Continue</button>
               </div>
             </form>
+            )}
           </div>
         )}
       </>,
@@ -2012,20 +2035,66 @@ function setupDone() {
     );
   }
   function connectPaystack() {
+    const step = state.psStep || 1;
+    const biz = state.tenant?.businessName || api.session?.businessName || "your business";
     return <AuthFrame title="Connect Paystack" back="business-settings">
       <h1 className="auth-title desktop-only">Connect Paystack</h1>
-      <p className="step-label">1 OF 3 · SECRET KEY</p>
-      <p className="status-text">In your Paystack dashboard, go to Settings › API Keys & Webhooks and copy your live secret key.</p>
-      <form id="live-connect-paystack" className="stack" noValidate>
-        {field("secretKey", "Secret key", "", "password", "Starts with sk_live_", 'required autocomplete="off" placeholder="sk_live_…"')}
-        <Callout tone="info" title="Keep this key private">It’s stored encrypted. After you save it, Invent IO only shows the last 3 characters. Only you, the owner, can change it.</Callout>
-        <p className="form-error" id="live-error" role="alert" />
-        <div className="auth-bottom">
-          <button className="primary" type="submit">Check key</button>
-          {link("Do this later", "business-settings")}
+      {step === 1 && <>
+        <p className="step-label">1 OF 3 · SECRET KEY</p>
+        <p className="status-text">In your Paystack dashboard, go to Settings › API Keys & Webhooks and copy your live secret key.</p>
+        <form id="live-connect-paystack" className="stack" noValidate>
+          {field("secretKey", "Secret key", "", "password", "Starts with sk_live_", 'required autocomplete="off" placeholder="sk_live_…"')}
+          <Callout tone="info" title="Keep this key private">It’s stored encrypted. After you save it, Invent IO only shows the last 3 characters. Only you, the owner, can change it.</Callout>
+          <p className="form-error" id="live-error" role="alert" />
+          <div className="auth-bottom">
+            <button className="primary" type="submit">Check key</button>
+            {link("Do this later", "business-settings")}
+          </div>
+        </form>
+      </>}
+      {step === 2 && <>
+        <p className="step-label">2 OF 3 · WEBHOOK</p>
+        <p className="status-text">Add this link to Paystack so your payments show up in Invent IO.</p>
+        <div className="stack">
+          <label className="field">Your webhook URL
+            <input type="text" readOnly disabled placeholder="Your webhook link will appear here" />
+          </label>
+          <p className="caption muted">Unique to {biz}. Don’t share it.</p>
+          <button className="secondary" type="button" data-live="invite-unavailable">Copy link</button>
+          <div className="stack-sm">
+            <strong className="caption">In Paystack</strong>
+            <ol className="steps-list"><li>Open Settings › API Keys & Webhooks</li><li>Paste the link into Live Webhook URL</li><li>Click Save changes</li></ol>
+          </div>
+          <button className="primary" type="button" data-live="ps-next">I’ve added it</button>
         </div>
-      </form>
+      </>}
+      {step === 3 && <>
+        <p className="step-label">3 OF 3 · DONE</p>
+        <Callout tone="success" title="Paystack connected">Card and transfer payments to your Paystack account will show in Pending payments, ready to match to a sale.</Callout>
+        <div className="card">
+          <div className="kv"><span>Secret key</span><strong>•••• {state.psKey || "•••"}</strong></div>
+          <div className="kv"><span>Webhook</span><strong>Waiting for first payment</strong></div>
+        </div>
+        <p className="caption muted">We’ll mark the webhook as working when your first Paystack payment arrives. Paystack pays out to your bank as usual.</p>
+        <button className="primary" type="button" data-live="ps-done">Continue</button>
+      </>}
     </AuthFrame>;
+  }
+  function withdrawalAccount() {
+    return ownerOnly(
+      "Withdrawal account",
+      <form id="live-withdrawal-account" className="card pad stack" noValidate>
+        {field("bank", "Bank", "", "text", "", 'required placeholder="GTBank"')}
+        {field("accountNumber", "Account number", "", "text", "10 digits", 'required inputmode="numeric" maxlength="10"')}
+        <label className="field">Account name
+          <input type="text" readOnly disabled placeholder="Found with your bank" />
+        </label>
+        <p className="caption muted">We check the account name with your bank before saving. Withdrawals will go to this account.</p>
+        <p className="form-error" id="live-error" role="alert" />
+        <button className="primary save-btn" type="submit">Save account</button>
+      </form>,
+      { back: "business-settings", cls: "narrow" },
+    );
   }
 
   function businessSettings() {
@@ -2055,7 +2124,7 @@ function setupDone() {
           {ico("caret")}
         </a>
         <p className="step-label">WITHDRAWALS</p>
-        <a className="list-link card" href="#/wallet">
+        <a className="list-link card" href="#/withdrawal-account">
           <div className="grow"><strong>Withdrawal account</strong><p>Not set up yet</p></div>
           {ico("caret")}
         </a>
@@ -2079,6 +2148,7 @@ function setupDone() {
     subscription,
     wallet,
     connectPaystack,
+    withdrawalAccount,
     inviteStaff,
     setupPayments,
     team,
