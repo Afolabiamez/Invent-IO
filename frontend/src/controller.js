@@ -613,6 +613,11 @@ export function createMerchantController({ ui, rerender }) {
         toast("Plans aren’t available yet.");
         return;
       }
+      if (action === "name-edit" || action === "name-cancel") {
+        state.editingName = action === "name-edit";
+        rerender();
+        return;
+      }
       if (action === "invite-staff") {
         go("invite-staff");
         return;
@@ -934,6 +939,7 @@ export function createMerchantController({ ui, rerender }) {
         if (!name) throw new Error("Enter your name.");
         api.update({ name });
         state.profile = { ...person(), name };
+        state.editingName = false;
         toast("Name updated.");
         rerender();
         return;

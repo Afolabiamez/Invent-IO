@@ -1284,11 +1284,27 @@ export function createViews({
     return shell(
       "Account",
       <section className="card acct-card">
-        <form id="live-account-name" className="acct-row acct-name" noValidate>
-          <label className="acct-label" htmlFor="acct-name">Name</label>
-          <input id="acct-name" name="name" type="text" defaultValue={person().name} autoComplete="name" required />
-          <button className="secondary" type="submit">Save</button>
-        </form>
+        <div className="acct-head">
+          <h2 className="acct-title">Your details</h2>
+          {!state.editingName && (
+            <button type="button" className="text-btn" data-live="name-edit" aria-label="Edit name">
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M13.5 3.5l3 3L7 16l-4 1 1-4 9.500-9.500z" /></svg>
+              Edit
+            </button>
+          )}
+        </div>
+        {state.editingName ? (
+          <form id="live-account-name" className="acct-name" noValidate>
+            <label className="acct-label" htmlFor="acct-name">Name</label>
+            <input id="acct-name" name="name" type="text" defaultValue={person().name} autoComplete="name" autoFocus required />
+            <div className="form-actions">
+              <button className="secondary" type="button" data-live="name-cancel">Cancel</button>
+              <button className="primary" type="submit">Save changes</button>
+            </div>
+          </form>
+        ) : (
+          row("Name", person().name)
+        )}
         {row("Email", person().email)}
         {row("Role", [role, biz].filter(Boolean).join(" \u00b7 "))}
         <a
