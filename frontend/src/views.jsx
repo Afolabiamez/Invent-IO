@@ -231,7 +231,7 @@ export function createViews({
               </div>
             </div>
             <div className="chips">
-              {can("payments.manage") && (
+              {(can("payments.manage") || can("sales.allocate")) && (
                 <div className="bell-wrap t-desk">
                   <button className="bell-btn" type="button" data-live="toggle-notifs" aria-label="Notifications" aria-expanded={!!state.notifOpen}>
                     <img src="assets/notification.svg" alt="" />
@@ -720,13 +720,25 @@ export function createViews({
       </a>
     ));
   }
+  function stockInfo(p) {
+    const s = state.stock?.[p.id];
+    if (!s) return null;
+    if (s.qty < 0) return { kind: "check", label: "Check count \u00b7 \u2212" + Math.abs(s.qty) };
+    if (s.qty === 0) return { kind: "out", label: "Out of stock" };
+    if (s.lowStockThreshold > 0 && s.qty <= s.lowStockThreshold)
+      return { kind: "low", label: "Low \u00b7 " + s.qty + " left" };
+    return { kind: "ok", label: s.qty + " in stock" };
+  }
   function catalogTable(rows) {
+    const showCost = can("catalog.write");
+    const hasStock = rows.some((p) => stockInfo(p));
     return (
       <div className="pay-table prod-table" role="table">
         <div className="pay-row pay-head" role="row">
           <span>Product</span>
           <span className="num">Selling price</span>
-          <span className="num">Cost price</span>
+          {showCost && <span className="num">Cost price</span>}
+          {hasStock && <span>Stock</span>}
           <span />
         </div>
         {rows.map((p) => (
@@ -742,16 +754,23 @@ export function createViews({
                 <strong>{p.name}</strong>
                 <span className="prod-sub">
                   {formatMinor(p.price)}
-                  {p.cost != null ? " \u00b7 cost " + formatMinor(p.cost) : ""}
+                  {showCost && p.cost != null ? " \u00b7 cost " + formatMinor(p.cost) : ""}
                 </span>
               </span>
             </span>
             <span className="num">{formatMinor(p.price)}</span>
-            <span className="num">
-              {p.cost != null ? formatMinor(p.cost) : "\u2014"}
-            </span>
+            {showCost && (
+              <span className="num">
+                {p.cost != null ? formatMinor(p.cost) : "\u2014"}
+              </span>
+            )}
+            {hasStock && (
+              <span className={"stock-cell " + (stockInfo(p)?.kind || "")}>
+                {stockInfo(p)?.label || "\u2014"}
+              </span>
+            )}
             <span>
-              {p.cost == null && <span className="pay-old">Cost not set</span>}
+              {showCost && p.cost == null && <span className="pay-old">Cost not set</span>}
             </span>
           </a>
         ))}
@@ -764,14 +783,25 @@ export function createViews({
     const active = all.filter((p) => p.active !== false);
     const noCost = active.filter((p) => p.cost == null);
     const archived = all.filter((p) => p.active === false);
+    const kindOf = (p) => stockInfo(p)?.kind;
+    const lowRows = active.filter((p) => kindOf(p) === "low");
+    const outRows = active.filter((p) => kindOf(p) === "out");
+    const checkRows = active.filter((p) => kindOf(p) === "check");
     const rows =
       state.productFilter === "nocost"
         ? noCost
         : state.productFilter === "archived"
           ? archived
-          : active;
+          : state.productFilter === "low"
+            ? lowRows
+            : state.productFilter === "out"
+              ? outRows
+              : state.productFilter === "check"
+                ? checkRows
+                : active;
+    const staffView = !can("catalog.write");
     return shell(
-      "Products",
+      staffView ? "Stock" : "Products",
       <>
         <div className="toolbar">
           <label className="search">
@@ -792,7 +822,10 @@ export function createViews({
           )}
           <div className="chip-row">
             {chip("productFilter", "all", "All")}
-            {noCost.length > 0 &&
+            {lowRows.length > 0 && chip("productFilter", "low", "Low (" + lowRows.length + ")")}
+            {outRows.length > 0 && chip("productFilter", "out", "Out (" + outRows.length + ")")}
+            {checkRows.length > 0 && chip("productFilter", "check", "Check count (" + checkRows.length + ")")}
+            {can("catalog.write") && noCost.length > 0 &&
               chip(
                 "productFilter",
                 "nocost",

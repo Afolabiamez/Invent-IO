@@ -40,6 +40,7 @@ export function createMerchantController({ ui, rerender }) {
     allocating: false,
     tenant: null,
     products: [],
+    stock: {},
     managed: null,
     loading: false,
     error: "",
@@ -208,6 +209,18 @@ export function createMerchantController({ ui, rerender }) {
       if (turn === generation) state.products = rows;
     } catch (error) {
       if (turn === generation) state.catalogError = message(error);
+    }
+    const stockBranch =
+      state.tenant?.branchId ||
+      (state.tenant?.branches?.length === 1 ? state.tenant.branches[0].id : null);
+    if (stockBranch && can("stock.read")) {
+      try {
+        const levels = await api.request(`/branches/${stockBranch}/stock`);
+        if (turn === generation)
+          state.stock = Object.fromEntries(
+            (Array.isArray(levels) ? levels : []).map((r) => [r.productId, r]),
+          );
+      } catch {}
     }
   }
   async function loadManaged() {

@@ -3395,3 +3395,6 @@ button.list-link{width:100%;text-align:left;background:transparent;border:0}
 .can-row .icon img{width:24px;height:24px}
 .can-do .notice{margin-top:12px}
 a.secondary{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 24px;border:1px solid #d0d5dd;border-radius:12px;font-weight:600;color:#1c1917;text-decoration:none;background:#fff}
+.stock-cell{font-size:14px;color:#57534e}
+.stock-cell.low,.stock-cell.check{color:#9a5b00}
+.stock-cell.out{color:#b42318}
