@@ -3377,3 +3377,7 @@ button.danger{background:#c4211c;color:#fff;border:0;border-radius:12px;height:5
 button.list-link{width:100%;text-align:left;background:transparent;border:0}
 .status-icon.clock{background:#fdf0d5;color:#92400e;border-radius:50%}
 .topbar .chips .primary{white-space:nowrap}@media (max-width:767px){.topbar .chips .primary{height:40px;padding:0 14px;font-size:14px}}
+.field input[aria-invalid=true]{border:2px solid #b42318}
+.acct-name{display:flex;align-items:center;gap:12px}
+.acct-name input{flex:1;min-width:0;height:44px;border:1px solid #d0d5dd;border-radius:10px;padding:0 12px;font:inherit}
+.acct-name .acct-label{min-width:56px}

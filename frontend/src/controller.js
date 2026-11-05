@@ -617,6 +617,16 @@ export function createMerchantController({ ui, rerender }) {
         go("invite-staff");
         return;
       }
+      if (action === "limit-close") {
+        state.limitOpen = false;
+        rerender();
+        return;
+      }
+      if (action === "account-edit") {
+        state.editingAccount = true;
+        rerender();
+        return;
+      }
       if (action === "invite-unavailable") {
         toast("Invite links aren’t available yet.");
         return;
@@ -919,6 +929,16 @@ export function createMerchantController({ ui, rerender }) {
         return;
       }
 
+      if (form.id === "live-account-name") {
+        const name = (data.name || "").trim();
+        if (!name) throw new Error("Enter your name.");
+        api.update({ name });
+        state.profile = { ...person(), name };
+        toast("Name updated.");
+        rerender();
+        return;
+      }
+
       if (form.id === "live-business-settings") {
         state.setup = {
           whatsapp: (data.whatsapp || "").trim(),
@@ -945,10 +965,12 @@ export function createMerchantController({ ui, rerender }) {
       }
       if (form.id === "live-connect-paystack") {
         const key = (data.secretKey || "").trim();
+        form.querySelector("input[name=secretKey]")?.setAttribute("aria-invalid", "true");
         if (/^sk_test_/.test(key))
           throw new Error("That’s a test key. Paste your live secret key, which starts with sk_live_.");
         if (!/^sk_live_/.test(key))
           throw new Error("Paystack didn’t accept this key. Copy it again and check it starts with sk_live_.");
+        form.querySelector("input[name=secretKey]")?.removeAttribute("aria-invalid");
         state.psKey = key.slice(-3);
         state.psStep = 2;
         rerender();

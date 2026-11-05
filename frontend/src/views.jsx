@@ -1284,7 +1284,11 @@ export function createViews({
     return shell(
       "Account",
       <section className="card acct-card">
-        {row("Name", person().name)}
+        <form id="live-account-name" className="acct-row acct-name" noValidate>
+          <label className="acct-label" htmlFor="acct-name">Name</label>
+          <input id="acct-name" name="name" type="text" defaultValue={person().name} autoComplete="name" required />
+          <button className="secondary" type="submit">Save</button>
+        </form>
         {row("Email", person().email)}
         {row("Role", [role, biz].filter(Boolean).join(" \u00b7 "))}
         <a
@@ -2003,6 +2007,7 @@ function setupDone() {
         <p className="caption muted">
           Only you can invite or remove staff and change what they can do.
         </p>
+        
       </div>,
       {
         action: (
@@ -2136,18 +2141,19 @@ function setupDone() {
   function connectPaystack() {
     const step = state.psStep || 1;
     const biz = state.tenant?.businessName || api.session?.businessName || "your business";
-    return <AuthFrame title="Connect Paystack" back="business-settings">
-      <h1 className="auth-title desktop-only">Connect Paystack</h1>
+    const replace = new URLSearchParams(location.hash.split("?")[1]).get("replace") === "1";
+    return <AuthFrame title={replace ? "Replace secret key" : "Connect Paystack"} back="paystack">
+      <h1 className="auth-title desktop-only">{replace ? "Replace secret key" : "Connect Paystack"}</h1>
       {step === 1 && <>
-        <p className="step-label">1 OF 3 · SECRET KEY</p>
-        <p className="status-text">In your Paystack dashboard, go to Settings › API Keys & Webhooks and copy your live secret key.</p>
+        <p className="step-label">{replace ? "SECRET KEY" : "1 OF 3 · SECRET KEY"}</p>
+        <p className="status-text">{replace ? "Paste the new live secret key from Settings › API Keys & Webhooks in Paystack. Your webhook link stays the same." : "In your Paystack dashboard, go to Settings › API Keys & Webhooks and copy your live secret key."}</p>
         <form id="live-connect-paystack" className="stack" noValidate>
           {field("secretKey", "Secret key", "", "password", "Starts with sk_live_", 'required autocomplete="off" placeholder="sk_live_…"')}
           <Callout tone="info" title="Keep this key private">It’s stored encrypted. After you save it, Invent IO only shows the last 3 characters. Only you, the owner, can change it.</Callout>
           <p className="form-error" id="live-error" role="alert" />
           <div className="auth-bottom">
-            <button className="primary" type="submit">Check key</button>
-            {link("Do this later", "business-settings")}
+            <button className="primary" type="submit">{replace ? "Save key" : "Check key"}</button>
+            {link(replace ? "Cancel" : "Do this later", replace ? "paystack" : "business-settings")}
           </div>
         </form>
       </>}
@@ -2180,6 +2186,21 @@ function setupDone() {
     </AuthFrame>;
   }
   function withdrawalAccount() {
+    const acct = state.tenant?.withdrawalAccount;
+    if (acct && !state.editingAccount)
+      return ownerOnly(
+        "Withdrawal account",
+        <div className="card pad stack">
+          <div className="card">
+            <div className="kv"><span>Bank</span><strong>{acct.bank || "\u2014"}</strong></div>
+            <div className="kv"><span>Account number</span><strong>{acct.last4 ? "•••• " + acct.last4 : "\u2014"}</strong></div>
+            <div className="kv"><span>Account name</span><strong>{acct.name || "\u2014"}</strong></div>
+          </div>
+          <p className="caption muted">Withdrawals go to this account.</p>
+          <div className="form-actions"><button className="secondary" type="button" data-live="account-edit">Change account</button></div>
+        </div>,
+        { back: "business-settings", cls: "narrow" },
+      );
     return ownerOnly(
       "Withdrawal account",
       <form id="live-withdrawal-account" className="card pad stack" noValidate>
@@ -2395,7 +2416,7 @@ function setupDone() {
           <div className="kv"><span>Secret key</span><strong>{state.psKey ? "sk_live_ •••• " + state.psKey : dash}</strong></div>
           <div className="kv"><span>Webhook</span><strong>{dash}</strong></div>
         </div>
-        <a className="list-link card" href="#/connect-paystack">
+        <a className="list-link card" href={state.psKey ? "#/connect-paystack?replace=1" : "#/connect-paystack"}>
           <div className="grow"><strong>{state.psKey ? "Replace secret key" : "Connect Paystack"}</strong><p>{state.psKey ? "Use this if you created a new key in Paystack" : "Use your own Paystack account"}</p></div>
           {ico("caret")}
         </a>
