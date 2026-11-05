@@ -797,11 +797,11 @@ if (form.id === "live-setup-product") {
     cost: safeMinorNumber(nairaToMinor(data.cost)),
   }});
   state.setupCount = (state.setupCount || 0) + 1;
-  const branchId = state.tenant?.branchId, problems = [];
+  const branchId = state.tenant?.branchId || (state.tenant?.branches?.length === 1 ? state.tenant.branches[0].id : null), problems = [];
   if (product?.id && branchId) {
     if (qty > 0) try {
       await api.request("/stock/adjustments", { method: "POST",
-        body: { branchId, productId: product.id, delta: qty, reason: "Opening stock" } });
+        body: { branchId, productId: product.id, type: "RESTOCK", qtyDelta: qty, reason: "Opening stock" } });
     } catch (e) { problems.push("stock: " + message(e)); }
     try {
       await api.request(`/branches/${branchId}/stock/${product.id}`, { method: "PATCH",

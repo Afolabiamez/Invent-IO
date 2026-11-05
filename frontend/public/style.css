@@ -3271,3 +3271,30 @@ body:has(.back-office) .demo-banner + .back-office .admin-sidebar { top:30px; he
   .acct-notif { display: none !important; }
   .sales-table .pay-row > :nth-child(4) { display: none; }
 }
+
+/* Onboarding screens (Figma W-ON-01 to W-ON-03) */
+.step-label { font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: .06em; color: #57534e; margin: 0; }
+.setup-done { display: flex; flex-direction: column; gap: 16px; }
+.setup-done .done-head { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding-top: 8px; }
+.setup-done .done-icon { width: 64px; height: 64px; border-radius: 50%; background: #e6f4f2; color: var(--teal); display: flex; align-items: center; justify-content: center; }
+.setup-done h2 { font-size: 24px; line-height: 32px; font-weight: 700; margin: 0; }
+.setup-done .done-meta { font-size: 14px; line-height: 20px; color: var(--muted); margin: 0; }
+.setup-done .done-note { font-size: 13px; line-height: 16px; color: #57534e; margin: 0; }
+@media (min-width: 768px) {
+  .status-form .stack { gap: 16px; }
+  .auth-main .auth-form { position: relative; top: -2px; }
+  .status-form .step-label { margin-top: 4px; }
+  .status-form .step-label + .status-text { margin-top: 4px; }
+}
+@media (max-width: 767px) {
+  .setup-done { align-items: stretch; padding-top: 32px; }
+  .setup-done h2 { font-size: 20px; line-height: 28px; }
+}
+
+/* Record payment (Figma W-SL-01) */
+.record-form h2{font-size:20px;line-height:28px;margin:0}
+.amount-field span,.field-label{font-size:14px;color:#57534e}
+.amount-field input{font-size:40px;line-height:48px;font-weight:700;border:0;border-bottom:2px solid #0f6b5c;border-radius:0;padding:4px 0;background:transparent;outline:none}
+.chip-row{display:flex;gap:8px}
+.chip{display:inline-flex;align-items:center;height:40px;padding:0 16px;border:1px solid #1c1917;border-radius:999px;font-size:14px;font-weight:600}
+.chip.selected{background:#e6f4f2;border-color:#0f6b5c;color:#0f6b5c}
