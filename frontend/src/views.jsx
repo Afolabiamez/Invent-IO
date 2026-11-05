@@ -1,133 +1,1707 @@
-import React, {useEffect, useState} from 'react';
-import {formatMinor} from '../public/money.js';
-import {brand, ico, link, field, notice, empty, kv, status, PasswordField} from './ui.jsx';
-import {CheckEmail, VerifyPending, VerifyResult} from './authScreens.jsx';
+import React, { useEffect, useState } from "react";
+import { formatMinor } from "../public/money.js";
+import {
+  brand,
+  ico,
+  link,
+  field,
+  notice,
+  empty,
+  kv,
+  status,
+  PasswordField,
+} from "./ui.jsx";
+import {
+  AuthFrame,
+  StatusBlock,
+  CheckEmail,
+  VerifyPending,
+  VerifyResult,
+} from "./authScreens.jsx";
 
-export function createViews({state,api,push,can,person,selectedItems,route,verify}) {
-  function shell(title,body,{back='',mobileBack='',action=null,active=route(),cls='',subtitle='',mobileTitle=''}={}) {
-    const nav=[['home','Home','navHome'],...(can('sales.allocate')?[['sales','Sales','navSales']]:[]),...(can('catalog.read')?[['products','Products','navProducts']]:[]),['account','Account','navSettings']];
-    const mobileNav=[...nav.filter(n=>n[0]!=='account'),['more','More','more']];
-    return <><aside className="sidebar"><a href="#/home" className="sidebar-brand" aria-label="Invent IO home">{brand()}<p>{state.tenant?.businessName || api.session?.businessName || 'Your business'}</p></a><nav className="side-nav">{nav.map(([r,t,i])=><a key={r} href={`#/${r}`} className={active===r?'active':''}>{ico(i)}<span className="nav-label">{t}</span>{r==='sales' && state.payments.length>0 && <span className="nav-badge">{state.payments.length}</span>}</a>)}{can('payments.manage') && <><span className="side-heading">PAYMENTS</span>{link('Payment setup','onboarding','list-link')}{link('Account overview','admin','list-link')}</>}</nav><a className="account-link" href="#/account"><span className="avatar">{(person().name || 'A')[0].toUpperCase()}</span><div><strong>{person().name}</strong><small>{state.tenant?.permissions?.includes('*')?'Owner':'Staff'} · Account</small></div></a></aside><div className="workspace"><header className={'topbar'+(['home','sales','products'].includes(route()) && !back ?' root-header':'')}><div className="title-group">{back && <button className="icon-btn" data-live="go" data-to={back} aria-label="Back">{ico('back')}</button>}{mobileBack && <button className="icon-btn mob-back" data-live="go" data-to={mobileBack} aria-label="Back">{ico('back')}</button>}<div><h1>{mobileTitle?<><span className="t-desk">{title}</span><span className="t-mob">{mobileTitle}</span></>:title}</h1>{subtitle && <p className="topbar-sub">{subtitle}</p>}</div></div><div className="chips">{action}{can('sales.allocate') && ['home','sales'].includes(route()) && <button className="icon-btn" data-live="go" data-to="record-payment" aria-label="Record payment" title="Record payment">{ico('homePlus')}</button>}</div></header><main className={`content ${cls}`}>{body}</main></div><nav className="bottom-nav live-nav" style={{"--live-nav-count":mobileNav.length}}>{mobileNav.map(([r,t,i])=><a key={r} href={`#/${r}`} className={(active===r||(r==='more'&&['account','notification-settings','onboarding','admin'].includes(active)))?'active':''}><span className="bottom-icon">{ico(i)}{r==='sales' && state.payments.length>0 && <span className="bottom-badge">{state.payments.length}</span>}</span><span>{t}</span></a>)}</nav></>;
+export function createViews({
+  state,
+  api,
+  push,
+  can,
+  person,
+  selectedItems,
+  route,
+  verify,
+}) {
+  function shell(
+    title,
+    body,
+    {
+      back = "",
+      mobileBack = "",
+      action = null,
+      active = route(),
+      cls = "",
+      subtitle = "",
+      mobileTitle = "",
+    } = {},
+  ) {
+    const nav = [
+      ["home", "Home", "navHome"],
+      ...(can("sales.allocate") ? [["sales", "Sales", "navSales"]] : []),
+      ...(can("catalog.read") ? [["products", "Products", "navProducts"]] : []),
+      ["account", "Account", "navSettings"],
+    ];
+    const mobileNav = [
+      ...nav.filter((n) => n[0] !== "account"),
+      ["more", "More", "more"],
+    ];
+    return (
+      <>
+        <aside className="sidebar">
+          <a
+            href="#/home"
+            className="sidebar-brand"
+            aria-label="Invent IO home"
+          >
+            {brand()}
+            <p>
+              {state.tenant?.businessName ||
+                api.session?.businessName ||
+                "Your business"}
+            </p>
+          </a>
+          <nav className="side-nav">
+            {nav.map(([r, t, i]) => (
+              <a
+                key={r}
+                href={`#/${r}`}
+                className={active === r ? "active" : ""}
+              >
+                {ico(i)}
+                <span className="nav-label">{t}</span>
+                {r === "sales" && state.payments.length > 0 && (
+                  <span className="nav-badge">{state.payments.length}</span>
+                )}
+              </a>
+            ))}
+            {can("payments.manage") && (
+              <>
+                <span className="side-heading">PAYMENTS</span>
+                {link("Payment setup", "onboarding", "list-link")}
+                {link("Account overview", "admin", "list-link")}
+              </>
+            )}
+          </nav>
+          <a className="account-link" href="#/account">
+            <span className="avatar">
+              {(person().name || "A")[0].toUpperCase()}
+            </span>
+            <div>
+              <strong>{person().name}</strong>
+              <small>
+                {state.tenant?.permissions?.includes("*") ? "Owner" : "Staff"} ·
+                Account
+              </small>
+            </div>
+          </a>
+        </aside>
+        <div className="workspace">
+          <header
+            className={
+              "topbar" +
+              (["home", "sales", "products"].includes(route()) && !back
+                ? " root-header"
+                : "")
+            }
+          >
+            <div className="title-group">
+              {back && (
+                <button
+                  className="icon-btn"
+                  data-live="go"
+                  data-to={back}
+                  aria-label="Back"
+                >
+                  {ico("back")}
+                </button>
+              )}
+              {mobileBack && (
+                <button
+                  className="icon-btn mob-back"
+                  data-live="go"
+                  data-to={mobileBack}
+                  aria-label="Back"
+                >
+                  {ico("back")}
+                </button>
+              )}
+              <div>
+                <h1>
+                  {mobileTitle ? (
+                    <>
+                      <span className="t-desk">{title}</span>
+                      <span className="t-mob">{mobileTitle}</span>
+                    </>
+                  ) : (
+                    title
+                  )}
+                </h1>
+                {subtitle && <p className="topbar-sub">{subtitle}</p>}
+              </div>
+            </div>
+            <div className="chips">
+              {action}
+              {can("sales.allocate") && ["home", "sales"].includes(route()) && (
+                <button
+                  className="icon-btn"
+                  data-live="go"
+                  data-to="record-payment"
+                  aria-label="Record payment"
+                  title="Record payment"
+                >
+                  {ico("homePlus")}
+                </button>
+              )}
+            </div>
+          </header>
+          <main className={`content ${cls}`}>{body}</main>
+        </div>
+        <nav
+          className="bottom-nav live-nav"
+          style={{ "--live-nav-count": mobileNav.length }}
+        >
+          {mobileNav.map(([r, t, i]) => (
+            <a
+              key={r}
+              href={`#/${r}`}
+              className={
+                active === r ||
+                (r === "more" &&
+                  [
+                    "account",
+                    "notification-settings",
+                    "onboarding",
+                    "admin",
+                  ].includes(active))
+                  ? "active"
+                  : ""
+              }
+            >
+              <span className="bottom-icon">
+                {ico(i)}
+                {r === "sales" && state.payments.length > 0 && (
+                  <span className="bottom-badge">{state.payments.length}</span>
+                )}
+              </span>
+              <span>{t}</span>
+            </a>
+          ))}
+        </nav>
+      </>
+    );
   }
   function auth(kind) {
-    const title = {create:'Create account',forgot:'Reset password',reset:'Set new password',login:'Log in'}[kind];
-    const subtitle = {create:'Set up your Invent IO account. You\u2019ll be the owner of your business.',forgot:'',reset:'',login:''}[kind];
-    const intro = kind==='forgot' ? 'Enter the email you use to log in. We\u2019ll send you a link to reset your password.' : '';
-    const submitLabel = state.submitting?'Please wait\u2026':kind==='forgot'?'Send reset link':kind==='reset'?'Save new password':title;
-    const errorLine = <p className="form-error auth-alert" role="alert" id="live-error" />;
-    const password = kind!=='forgot' && <PasswordField name="password" label={kind==='reset'?'New password':'Password'} hint={kind!=='login'?'At least 8 characters':''} attrs={{required:true,autoComplete:kind==='login'?'current-password':'new-password',...(kind!=='login'?{minLength:8}:{})}} extra={kind==='login'?link('Forgot password?','forgot','text-btn pw-forgot'):null} />;
-    return <div className="auth-layout" key={kind}><aside className="auth-brand"><a href="#/welcome" aria-label="Invent IO home"><span className="brand"><span className="brand-mark"><span className="icon" aria-hidden="true"><img src="assets/logo-teal.svg" alt="" /></span></span><span>Invent IO</span></span></a><div className="auth-brand-copy"><h1>Every sale, automatically tracked.</h1><p>A customer pays, you tap what they bought — the sale is recorded and your stock updates itself.</p></div></aside><div className="auth-mobile-header">{link(ico('back'),'welcome','icon-btn')}{title}</div><main className="auth-main"><form className="auth-form" id="live-auth" data-kind={kind} noValidate>{kind==='login' && <div className="auth-form-brand">{brand()}</div>}{kind==='login' && errorLine}{kind!=='login' && <div className="auth-heading"><h1>{title}</h1>{subtitle && <p>{subtitle}</p>}</div>}{intro && <p className="auth-intro">{intro}</p>}{kind==='create' && field('name','Your name','','text','','required autocomplete="name"')}{kind!=='reset' && field('email','Email','','email','','required autocomplete="username"')}{password}{kind==='create' && link('Forgot password?','forgot','text-btn auth-forgot')}{kind==='create' && field('businessName','Business name','','text','You can change it later in Business settings','required')}{kind==='reset' && field('confirm','Confirm password','','password','','required autocomplete="new-password"')}{kind==='login' && link('Forgot password?','forgot','text-btn auth-forgot')}{kind==='login' && <p className="auth-hint">Joining a team? Open the invite link from your owner.</p>}{kind!=='login' && errorLine}<div className="auth-bottom"><button className="primary" type="submit" disabled={state.submitting}>{submitLabel}</button>{kind!=='forgot' && link(kind==='login'?'Create account':kind==='create'?'Log in instead':'Back to log in',kind==='login'?'create':'login')}</div></form></main></div>;
+    const title = {
+      create: "Create account",
+      forgot: "Reset password",
+      reset: "Set new password",
+      login: "Log in",
+    }[kind];
+    const subtitle = {
+      create:
+        "Set up your Invent IO account. You\u2019ll be the owner of your business.",
+      forgot: "",
+      reset: "",
+      login: "",
+    }[kind];
+    const intro =
+      kind === "forgot"
+        ? "Enter the email you use to log in. We\u2019ll send you a link to reset your password."
+        : "";
+    const submitLabel = state.submitting
+      ? "Please wait\u2026"
+      : kind === "forgot"
+        ? "Send reset link"
+        : kind === "reset"
+          ? "Save new password"
+          : title;
+    const errorLine = (
+      <p className="form-error auth-alert" role="alert" id="live-error" />
+    );
+    const password = kind !== "forgot" && (
+      <PasswordField
+        name="password"
+        label={kind === "reset" ? "New password" : "Password"}
+        hint={kind !== "login" ? "At least 8 characters" : ""}
+        attrs={{
+          required: true,
+          autoComplete: kind === "login" ? "current-password" : "new-password",
+          ...(kind !== "login" ? { minLength: 8 } : {}),
+        }}
+        extra={
+          kind === "login"
+            ? link("Forgot password?", "forgot", "text-btn pw-forgot")
+            : null
+        }
+      />
+    );
+    return (
+      <div className="auth-layout" key={kind}>
+        <aside className="auth-brand">
+          <a href="#/welcome" aria-label="Invent IO home">
+            <span className="brand">
+              <span className="brand-mark">
+                <span className="icon" aria-hidden="true">
+                  <img src="assets/logo-teal.svg" alt="" />
+                </span>
+              </span>
+              <span>Invent IO</span>
+            </span>
+          </a>
+          <div className="auth-brand-copy">
+            <h1>Every sale, automatically tracked.</h1>
+            <p>
+              A customer pays, you tap what they bought — the sale is recorded
+              and your stock updates itself.
+            </p>
+          </div>
+        </aside>
+        <div className="auth-mobile-header">
+          {link(ico("back"), "welcome", "icon-btn")}
+          {title}
+        </div>
+        <main className="auth-main">
+          <form
+            className="auth-form"
+            id="live-auth"
+            data-kind={kind}
+            noValidate
+          >
+            {kind === "login" && (
+              <div className="auth-form-brand">{brand()}</div>
+            )}
+            {kind === "login" && errorLine}
+            {kind !== "login" && (
+              <div className="auth-heading">
+                <h1>{title}</h1>
+                {subtitle && <p>{subtitle}</p>}
+              </div>
+            )}
+            {intro && <p className="auth-intro">{intro}</p>}
+            {kind === "create" &&
+              field(
+                "name",
+                "Your name",
+                "",
+                "text",
+                "",
+                'required autocomplete="name"',
+              )}
+            {kind !== "reset" &&
+              field(
+                "email",
+                "Email",
+                "",
+                "email",
+                "",
+                'required autocomplete="username"',
+              )}
+
+             {kind==='create' && field('phone','Phone (optional)','','tel','','autocomplete="tel"')} 
+            {password}
+            {kind === "create" &&
+              link("Forgot password?", "forgot", "text-btn auth-forgot")}
+            {kind === "create" &&
+              field(
+                "businessName",
+                "Business name",
+                "",
+                "text",
+                "You can change it later in Business settings",
+                "required",
+              )}
+            {kind === "reset" &&
+              field(
+                "confirm",
+                "Confirm password",
+                "",
+                "password",
+                "",
+                'required autocomplete="new-password"',
+              )}
+            {kind === "login" &&
+              link("Forgot password?", "forgot", "text-btn auth-forgot")}
+            {kind === "login" && (
+              <p className="auth-hint">
+                Joining a team? Open the invite link from your owner.
+              </p>
+            )}
+            {kind !== "login" && errorLine}
+            <div className="auth-bottom">
+              <button
+                className="primary"
+                type="submit"
+                disabled={state.submitting}
+              >
+                {submitLabel}
+              </button>
+              {kind !== "forgot" &&
+                link(
+                  kind === "login"
+                    ? "Create account"
+                    : kind === "create"
+                      ? "Log in instead"
+                      : "Back to log in",
+                  kind === "login" ? "create" : "login",
+                )}
+            </div>
+          </form>
+        </main>
+      </div>
+    );
   }
   function notificationControls() {
-    const support=push.support();
-    const denied=typeof Notification!=='undefined' && Notification.permission==='denied';
-    return <><p className="caption muted">{state.pushMessage || (!support.supported?support.message:state.enabled?'Notifications enabled on this device.':denied?'Notifications are blocked in browser settings.':'Notifications are off on this device.')}</p><div className="chips">{support.supported && <><button className="secondary" data-live={state.pushReady?'push-enable':'push-prepare'} disabled={denied}>{state.pushReady?'Allow notifications':'Set up notifications'}</button><button className="text-btn" data-live="push-disable">Turn off notifications</button></>}</div></>;
+    const support = push.support();
+    const denied =
+      typeof Notification !== "undefined" &&
+      Notification.permission === "denied";
+    return (
+      <>
+        <p className="caption muted">
+          {state.pushMessage ||
+            (!support.supported
+              ? support.message
+              : state.enabled
+                ? "Notifications enabled on this device."
+                : denied
+                  ? "Notifications are blocked in browser settings."
+                  : "Notifications are off on this device.")}
+        </p>
+        <div className="chips">
+          {support.supported && (
+            <>
+              <button
+                className="secondary"
+                data-live={state.pushReady ? "push-enable" : "push-prepare"}
+                disabled={denied}
+              >
+                {state.pushReady
+                  ? "Allow notifications"
+                  : "Set up notifications"}
+              </button>
+              <button className="text-btn" data-live="push-disable">
+                Turn off notifications
+              </button>
+            </>
+          )}
+        </div>
+      </>
+    );
   }
-  const ago=iso=>{const t=Date.parse(iso);if(!t)return '\u2014';const m=Math.max(0,Math.round((Date.now()-t)/60000));return m<1?'Just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+(Math.round(m/1440)===1?' day ago':' days ago');};
-  const pending=rows=><div className="pay-table" role="table"><div className="pay-row pay-head" role="row"><span>Amount</span><span>How they paid</span><span>Customer / recorded by</span><span>Received</span><span>Note</span><span /></div>{rows.map(p=>{const at=p.paidAt||p.createdAt||p.receivedAt;const old=at && Date.now()-Date.parse(at)>864e5;return <button key={p.id} className="pay-row" role="row" data-live="begin-match" data-id={p.id}><strong>{formatMinor(p.amountMinor)}</strong><span>{[p.method||p.channel,p.provider].filter(Boolean).join(' \u00b7 ')||'\u2014'}{(p.providerReference||p.reference) && <small className="pay-ref">{p.providerReference||p.reference}</small>}</span><span>{p.customerName||p.recordedBy||'\u2014'}</span><span>{ago(at)}</span><span>{old?<span className="pay-old">Over a day old</span>:''}</span><span className="pay-caret">{ico('caret')}</span></button>;})}</div>;
+  const ago = (iso) => {
+    const t = Date.parse(iso);
+    if (!t) return "\u2014";
+    const m = Math.max(0, Math.round((Date.now() - t) / 60000));
+    return m < 1
+      ? "Just now"
+      : m < 60
+        ? m + " min ago"
+        : m < 1440
+          ? Math.round(m / 60) + " h ago"
+          : Math.round(m / 1440) +
+            (Math.round(m / 1440) === 1 ? " day ago" : " days ago");
+  };
+  const pending = (rows) => (
+    <div className="pay-table" role="table">
+      <div className="pay-row pay-head" role="row">
+        <span>Amount</span>
+        <span>How they paid</span>
+        <span>Customer / recorded by</span>
+        <span>Received</span>
+        <span>Note</span>
+        <span />
+      </div>
+      {rows.map((p) => {
+        const at = p.paidAt || p.createdAt || p.receivedAt;
+        const old = at && Date.now() - Date.parse(at) > 864e5;
+        return (
+          <button
+            key={p.id}
+            className="pay-row"
+            role="row"
+            data-live="begin-match"
+            data-id={p.id}
+          >
+            <strong>{formatMinor(p.amountMinor)}</strong>
+            <span>
+              {[p.method || p.channel, p.provider]
+                .filter(Boolean)
+                .join(" \u00b7 ") || "\u2014"}
+              {(p.providerReference || p.reference) && (
+                <small className="pay-ref">
+                  {p.providerReference || p.reference}
+                </small>
+              )}
+            </span>
+            <span>{p.customerName || p.recordedBy || "\u2014"}</span>
+            <span>{ago(at)}</span>
+            <span>
+              {old ? <span className="pay-old">Over a day old</span> : ""}
+            </span>
+            <span className="pay-caret">{ico("caret")}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
   function dashboard() {
-    return <>{state.coreErrors.length>0 && notice(state.coreErrors.map((error,i)=><p key={i}>{error}</p>),'warning')}{state.summary && <section><div className="section-title"><h2>Today’s sales</h2>{link('View sales','sales')}</div><div className="card daily"><strong className="money-lg">{formatMinor(state.summary.revenue)}</strong><div className="daily-details"><span>{state.summary.salesCount} sales</span><span className="profit"><strong>{formatMinor(state.summary.margin)}</strong>Profit</span></div></div></section>}{can('sales.allocate') && <section><div className="section-title"><h2>Pending payments</h2>{state.payments.length>0 ? link('View all ('+state.payments.length+')','sales') : <button className="text-btn" data-live="refresh-core">Refresh</button>}</div>{state.payments.length?<>{pending(state.payments.slice(0,3))}<p className="caption muted">Select a row to record what was sold. Pending payments don’t count in sales until products are recorded.</p></>:empty('No pending payments','Confirmed payments waiting for products will appear here.')}</section>}</>;
+    return (
+      <>
+        {state.coreErrors.length > 0 &&
+          notice(
+            state.coreErrors.map((error, i) => <p key={i}>{error}</p>),
+            "warning",
+          )}
+        {state.summary && (
+          <section>
+            <div className="section-title">
+              <h2>Today’s sales</h2>
+              {link("View sales", "sales")}
+            </div>
+            <div className="card daily">
+              <strong className="money-lg">
+                {formatMinor(state.summary.revenue)}
+              </strong>
+              <div className="daily-details">
+                <span>{state.summary.salesCount} sales</span>
+                <span className="profit">
+                  <strong>{formatMinor(state.summary.margin)}</strong>Profit
+                </span>
+              </div>
+            </div>
+          </section>
+        )}
+        {can("sales.allocate") && (
+          <section>
+            <div className="section-title">
+              <h2>Pending payments</h2>
+              {state.payments.length > 0 ? (
+                link("View all (" + state.payments.length + ")", "sales")
+              ) : (
+                <button className="text-btn" data-live="refresh-core">
+                  Refresh
+                </button>
+              )}
+            </div>
+            {state.payments.length ? (
+              <>
+                {pending(state.payments.slice(0, 3))}
+                <p className="caption muted">
+                  Select a row to record what was sold. Pending payments don’t
+                  count in sales until products are recorded.
+                </p>
+              </>
+            ) : (
+              empty(
+                "No pending payments",
+                "Confirmed payments waiting for products will appear here.",
+              )
+            )}
+          </section>
+        )}
+      </>
+    );
   }
   function home() {
-    const day=new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
-    const biz=state.tenant?.businessName || api.session?.businessName;
-    return shell('Home',<div className="stack">{dashboard()}{state.catalogError && notice(state.catalogError,'warning')}</div>,{subtitle:<>{biz && <span className="t-desk">{biz} {'\u00b7'} </span>}{day}</>,mobileTitle:biz||'Home'});
+    const day = new Date().toLocaleDateString("en-GB", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+    });
+    const biz = state.tenant?.businessName || api.session?.businessName;
+    return shell(
+      "Home",
+      <div className="stack">
+        {dashboard()}
+        {state.catalogError && notice(state.catalogError, "warning")}
+      </div>,
+      {
+        subtitle: (
+          <>
+            {biz && (
+              <span className="t-desk">
+                {biz} {"\u00b7"}{" "}
+              </span>
+            )}
+            {day}
+          </>
+        ),
+        mobileTitle: biz || "Home",
+      },
+    );
   }
   function catalogRows(rows) {
-    return rows.map(p=><a key={p.id} className="list-link" href={`#/catalog-edit?id=${encodeURIComponent(p.id)}`}><span className="product-placeholder">{ico('package')}</span><div className="grow"><strong>{p.name}</strong><p>{formatMinor(p.price)}{p.cost!=null?' · cost '+formatMinor(p.cost):''}{p.sku?' · '+p.sku:''}</p></div>{ico('caret')}</a>);
+    return rows.map((p) => (
+      <a
+        key={p.id}
+        className="list-link"
+        href={`#/catalog-edit?id=${encodeURIComponent(p.id)}`}
+      >
+        <span className="product-placeholder">{ico("package")}</span>
+        <div className="grow">
+          <strong>{p.name}</strong>
+          <p>
+            {formatMinor(p.price)}
+            {p.cost != null ? " · cost " + formatMinor(p.cost) : ""}
+            {p.sku ? " · " + p.sku : ""}
+          </p>
+        </div>
+        {ico("caret")}
+      </a>
+    ));
   }
   function catalogTable(rows) {
-    return <div className="pay-table prod-table" role="table"><div className="pay-row pay-head" role="row"><span>Product</span><span className="num">Selling price</span><span className="num">Cost price</span><span /></div>{rows.map(p=><a key={p.id} className="pay-row prod-row" role="row" href={`#/catalog-edit?id=${encodeURIComponent(p.id)}`}><span className="prod-name"><span className="product-placeholder">{ico('package')}</span><span className="prod-text"><strong>{p.name}</strong><span className="prod-sub">{formatMinor(p.price)}{p.cost!=null?' \u00b7 cost '+formatMinor(p.cost):''}</span></span></span><span className="num">{formatMinor(p.price)}</span><span className="num">{p.cost!=null?formatMinor(p.cost):'\u2014'}</span><span>{p.cost==null && <span className="pay-old">Cost not set</span>}</span></a>)}</div>;
+    return (
+      <div className="pay-table prod-table" role="table">
+        <div className="pay-row pay-head" role="row">
+          <span>Product</span>
+          <span className="num">Selling price</span>
+          <span className="num">Cost price</span>
+          <span />
+        </div>
+        {rows.map((p) => (
+          <a
+            key={p.id}
+            className="pay-row prod-row"
+            role="row"
+            href={`#/catalog-edit?id=${encodeURIComponent(p.id)}`}
+          >
+            <span className="prod-name">
+              <span className="product-placeholder">{ico("package")}</span>
+              <span className="prod-text">
+                <strong>{p.name}</strong>
+                <span className="prod-sub">
+                  {formatMinor(p.price)}
+                  {p.cost != null ? " \u00b7 cost " + formatMinor(p.cost) : ""}
+                </span>
+              </span>
+            </span>
+            <span className="num">{formatMinor(p.price)}</span>
+            <span className="num">
+              {p.cost != null ? formatMinor(p.cost) : "\u2014"}
+            </span>
+            <span>
+              {p.cost == null && <span className="pay-old">Cost not set</span>}
+            </span>
+          </a>
+        ))}
+      </div>
+    );
   }
   function products() {
-    const q=(state.search || '').toLowerCase();
-    const all=state.products.filter(p=>p.name.toLowerCase().includes(q));
-    const active=all.filter(p=>p.active!==false);
-    const noCost=active.filter(p=>p.cost==null);
-    const archived=all.filter(p=>p.active===false);
-    const rows=state.productFilter==='nocost'?noCost:state.productFilter==='archived'?archived:active;
-    return shell('Products',<><div className="toolbar"><label className="search">{ico('search')}<input id="live-search" type="search" value={state.search || ''} onChange={()=>{}} placeholder="Search products" aria-label="Search products" /></label>{can('catalog.write') && <a className="secondary add-mobile" href="#/catalog-new">+ Add product</a>}<div className="chip-row">{chip('productFilter','all','All')}{noCost.length>0 && chip('productFilter','nocost','Cost not set ('+noCost.length+')')}{archived.length>0 && chip('productFilter','archived','Archived')}</div><span className="chip-gap" />{can('catalog.write') && link('Import CSV','import','secondary')}</div>{state.catalogError && notice(state.catalogError,'warning')}<div id="live-catalog">{rows.length?<>{catalogTable(rows)}<p className="caption muted">Select a product to open it.</p></>:<div className="card">{empty(state.search?'No matching products':'No products yet',state.search?'Try another search.':'Add your products one by one, or import an existing spreadsheet as CSV.',can('catalog.write')?link('Import CSV','import','primary'):null)}</div>}</div></>,{active:'products',action:can('catalog.write')?<a className="primary add-product" href="#/catalog-new">+ Add product</a>:null});
+    const q = (state.search || "").toLowerCase();
+    const all = state.products.filter((p) => p.name.toLowerCase().includes(q));
+    const active = all.filter((p) => p.active !== false);
+    const noCost = active.filter((p) => p.cost == null);
+    const archived = all.filter((p) => p.active === false);
+    const rows =
+      state.productFilter === "nocost"
+        ? noCost
+        : state.productFilter === "archived"
+          ? archived
+          : active;
+    return shell(
+      "Products",
+      <>
+        <div className="toolbar">
+          <label className="search">
+            {ico("search")}
+            <input
+              id="live-search"
+              type="search"
+              value={state.search || ""}
+              onChange={() => {}}
+              placeholder="Search products"
+              aria-label="Search products"
+            />
+          </label>
+          {can("catalog.write") && (
+            <a className="secondary add-mobile" href="#/catalog-new">
+              + Add product
+            </a>
+          )}
+          <div className="chip-row">
+            {chip("productFilter", "all", "All")}
+            {noCost.length > 0 &&
+              chip(
+                "productFilter",
+                "nocost",
+                "Cost not set (" + noCost.length + ")",
+              )}
+            {archived.length > 0 &&
+              chip("productFilter", "archived", "Archived")}
+          </div>
+          <span className="chip-gap" />
+          {can("catalog.write") && link("Import CSV", "import", "secondary")}
+        </div>
+        {state.catalogError && notice(state.catalogError, "warning")}
+        <div id="live-catalog">
+          {rows.length ? (
+            <>
+              {catalogTable(rows)}
+              <p className="caption muted">Select a product to open it.</p>
+            </>
+          ) : (
+            <div className="card">
+              {empty(
+                state.search ? "No matching products" : "No products yet",
+                state.search
+                  ? "Try another search."
+                  : "Add your products one by one, or import an existing spreadsheet as CSV.",
+                can("catalog.write")
+                  ? link("Import CSV", "import", "primary")
+                  : null,
+              )}
+            </div>
+          )}
+        </div>
+      </>,
+      {
+        active: "products",
+        action: can("catalog.write") ? (
+          <a className="primary add-product" href="#/catalog-new">
+            + Add product
+          </a>
+        ) : null,
+      },
+    );
   }
   function importResult() {
-    const r=state.result;
-    return <section className="card pad stack-sm" role="status"><h2>Import complete</h2><div className="summary-grid">{[['Created',r.created],['Updated',r.updated],['Skipped',r.skipped]].map(([label,n])=><div key={label}><span>{label}</span><strong className="money-lg">{n}</strong></div>)}</div>{r.errors.length?<><p className="caption">Fix the skipped data rows below before importing again. Row numbers exclude the header. Don’t re-import successful rows without SKUs.</p><ul>{r.errors.map((e,i)=><li key={i} className="caption">Data row {e.row}: {e.message}</li>)}</ul></>:<p>All rows were imported.</p>}{link('View catalog','products','primary')}</section>;
+    const r = state.result;
+    return (
+      <section className="card pad stack-sm" role="status">
+        <h2>Import complete</h2>
+        <div className="summary-grid">
+          {[
+            ["Created", r.created],
+            ["Updated", r.updated],
+            ["Skipped", r.skipped],
+          ].map(([label, n]) => (
+            <div key={label}>
+              <span>{label}</span>
+              <strong className="money-lg">{n}</strong>
+            </div>
+          ))}
+        </div>
+        {r.errors.length ? (
+          <>
+            <p className="caption">
+              Fix the skipped data rows below before importing again. Row
+              numbers exclude the header. Don’t re-import successful rows
+              without SKUs.
+            </p>
+            <ul>
+              {r.errors.map((e, i) => (
+                <li key={i} className="caption">
+                  Data row {e.row}: {e.message}
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <p>All rows were imported.</p>
+        )}
+        {link("View catalog", "products", "primary")}
+      </section>
+    );
   }
   function importScreen() {
-    const batch=state.csv;
-    return shell('Import products',<div className="stack"><section className="card pad stack-sm"><h2>Bring your existing catalog</h2><p className="muted">Export your spreadsheet as CSV. Required columns: <strong>name, price, cost</strong>. Optional: sku, barcode, unit.</p><a className="text-btn" href="catalog-template.csv" download>Download CSV template (naira)</a><label className="field">CSV file<input id="live-csv" type="file" accept=".csv,text/csv" disabled={state.importing}/><span className="hint">Up to 5,000 rows and 2 MB. Excel files must be exported as CSV.</span></label><label className="field">Price and cost in your file<select id="live-units" value={state.units} onChange={()=>{}} disabled={state.importing}><option value="naira">Naira — 1500 means ₦1,500</option><option value="kobo">Kobo — 150000 means ₦1,500</option></select></label><p className="form-error" id="import-error" role="alert" />{batch && <><p><strong>{state.fileName}</strong> · {batch.preview.length} rows ready</p>{batch.withoutSku?notice(`${batch.withoutSku} rows have no SKU. Importing those rows again creates additional products; it does not update them.`,'warning'):notice('Matching SKUs update existing products. Review the file before importing.')}{batch.ignoredColumns.length>0 && notice('These columns will not be imported: '+batch.ignoredColumns.join(', ')+'. Stock quantities are not imported by this endpoint.','warning')}<div className="import-preview"><table className="data-table"><thead><tr><th>Name</th><th>SKU</th><th>Price</th><th>Cost</th></tr></thead><tbody>{batch.preview.slice(0,5).map((p,i)=><tr key={i}><td>{p.name}</td><td>{p.sku || '—'}</td><td>{formatMinor(p.price)}</td><td>{formatMinor(p.cost)}</td></tr>)}</tbody></table></div><p className="small muted">Preview shows the first {Math.min(5,batch.preview.length)} rows. Prices are converted to integer kobo before upload.</p><button className="primary" data-live="import-submit" disabled={state.importing}>{state.importing?'Importing…':`Import ${batch.preview.length} products`}</button></>}</section>{state.result && importResult()}</div>,{back:'products',active:'products',cls:'medium'});
+    const batch = state.csv;
+    return shell(
+      "Import products",
+      <div className="stack">
+        <section className="card pad stack-sm">
+          <h2>Bring your existing catalog</h2>
+          <p className="muted">
+            Export your spreadsheet as CSV. Required columns:{" "}
+            <strong>name, price, cost</strong>. Optional: sku, barcode, unit.
+          </p>
+          <a className="text-btn" href="catalog-template.csv" download>
+            Download CSV template (naira)
+          </a>
+          <label className="field">
+            CSV file
+            <input
+              id="live-csv"
+              type="file"
+              accept=".csv,text/csv"
+              disabled={state.importing}
+            />
+            <span className="hint">
+              Up to 5,000 rows and 2 MB. Excel files must be exported as CSV.
+            </span>
+          </label>
+          <label className="field">
+            Price and cost in your file
+            <select
+              id="live-units"
+              value={state.units}
+              onChange={() => {}}
+              disabled={state.importing}
+            >
+              <option value="naira">Naira — 1500 means ₦1,500</option>
+              <option value="kobo">Kobo — 150000 means ₦1,500</option>
+            </select>
+          </label>
+          <p className="form-error" id="import-error" role="alert" />
+          {batch && (
+            <>
+              <p>
+                <strong>{state.fileName}</strong> · {batch.preview.length} rows
+                ready
+              </p>
+              {batch.withoutSku
+                ? notice(
+                    `${batch.withoutSku} rows have no SKU. Importing those rows again creates additional products; it does not update them.`,
+                    "warning",
+                  )
+                : notice(
+                    "Matching SKUs update existing products. Review the file before importing.",
+                  )}
+              {batch.ignoredColumns.length > 0 &&
+                notice(
+                  "These columns will not be imported: " +
+                    batch.ignoredColumns.join(", ") +
+                    ". Stock quantities are not imported by this endpoint.",
+                  "warning",
+                )}
+              <div className="import-preview">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>SKU</th>
+                      <th>Price</th>
+                      <th>Cost</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {batch.preview.slice(0, 5).map((p, i) => (
+                      <tr key={i}>
+                        <td>{p.name}</td>
+                        <td>{p.sku || "—"}</td>
+                        <td>{formatMinor(p.price)}</td>
+                        <td>{formatMinor(p.cost)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="small muted">
+                Preview shows the first {Math.min(5, batch.preview.length)}{" "}
+                rows. Prices are converted to integer kobo before upload.
+              </p>
+              <button
+                className="primary"
+                data-live="import-submit"
+                disabled={state.importing}
+              >
+                {state.importing
+                  ? "Importing…"
+                  : `Import ${batch.preview.length} products`}
+              </button>
+            </>
+          )}
+        </section>
+        {state.result && importResult()}
+      </div>,
+      { back: "products", active: "products", cls: "medium" },
+    );
   }
   function editor(id) {
-    const p=id?state.products.find(p=>p.id===id):null;
-    if(id && !p)return shell('Product',empty('Product not found','Refresh the catalog and try again.'),{back:'products'});
-    if(!can('catalog.write'))return shell('Products',p?<div className="card">{kv('Name',p.name)}{kv('Selling price',formatMinor(p.price))}{kv('SKU',p.sku || '—')}</div>:empty('You don’t have access','Ask your business owner to add products.'),{back:'products'});
-    const decimal=x=>{const n=BigInt(x??0);return (n/100n)+'.'+(n%100n).toString().padStart(2,'0');};
-    return shell(p?'Edit product':'Add product',<form key={(id || 'new')+state.formNonce} id="live-product" data-id={id || ''} className="card pad prod-form" noValidate>{field('name','Product name',p?.name || '','text','','required')}<div className="pair">{field('price','Selling price (₦)',p?decimal(p.price):'','text','','required inputmode="decimal"')}{field('cost','Cost price (₦)',p?decimal(p.cost):'','text','Used to work out your profit.','required inputmode="decimal"')}</div>{field('sku','SKU (optional)',p?.sku || '')}<p className="form-error" id="live-error" /><div className="form-actions">{!p && <button className="secondary" type="submit" data-again="1">Save &amp; add another</button>}<button className="primary" type="submit">Save</button></div></form>,{back:'products',active:'products',cls:'form880'});
+    const p = id ? state.products.find((p) => p.id === id) : null;
+    if (id && !p)
+      return shell(
+        "Product",
+        empty("Product not found", "Refresh the catalog and try again."),
+        { back: "products" },
+      );
+    if (!can("catalog.write"))
+      return shell(
+        "Products",
+        p ? (
+          <div className="card">
+            {kv("Name", p.name)}
+            {kv("Selling price", formatMinor(p.price))}
+            {kv("SKU", p.sku || "—")}
+          </div>
+        ) : (
+          empty(
+            "You don’t have access",
+            "Ask your business owner to add products.",
+          )
+        ),
+        { back: "products" },
+      );
+    const decimal = (x) => {
+      const n = BigInt(x ?? 0);
+      return n / 100n + "." + (n % 100n).toString().padStart(2, "0");
+    };
+    return shell(
+      p ? "Edit product" : "Add product",
+      <form
+        key={(id || "new") + state.formNonce}
+        id="live-product"
+        data-id={id || ""}
+        className="card pad prod-form"
+        noValidate
+      >
+        {field("name", "Product name", p?.name || "", "text", "", "required")}
+        <div className="pair">
+          {field(
+            "price",
+            "Selling price (₦)",
+            p ? decimal(p.price) : "",
+            "text",
+            "",
+            'required inputmode="decimal"',
+          )}
+          {field(
+            "cost",
+            "Cost price (₦)",
+            p ? decimal(p.cost) : "",
+            "text",
+            "Used to work out your profit.",
+            'required inputmode="decimal"',
+          )}
+        </div>
+        {field("sku", "SKU (optional)", p?.sku || "")}
+        <p className="form-error" id="live-error" />
+        <div className="form-actions">
+          {!p && (
+            <button className="secondary" type="submit" data-again="1">
+              Save &amp; add another
+            </button>
+          )}
+          <button className="primary" type="submit">
+            Save
+          </button>
+        </div>
+      </form>,
+      { back: "products", active: "products", cls: "form880" },
+    );
   }
   function accountCard() {
-    const a=state.managed;
-    return <section className="card pad stack-sm"><h2>Payment account</h2>{state.accountError?notice(state.accountError,'warning'):a?<><div className="between"><span>Status</span>{status(a.status,a.status==='ACTIVE'?'good':'warn')}</div>{(a.virtualAccounts || []).map(v=><div className="card" key={v.id || v.accountNumber}>{kv('Bank',v.bankName)}{kv('Account name',v.accountName)}{kv('Account number',v.accountNumber)}{kv('Account status',v.status)}</div>)}{!a.virtualAccounts?.length && notice('Your account setup is not complete. Continue with the same settlement details to resume.','warning')}</>:<p className="muted">No managed account is set up yet.</p>}<p className="small muted">Paystack test mode · account setup does not mean live payments or withdrawals are enabled.</p>{link(a && !a.virtualAccounts?.length?'Continue setup':'Payment setup','onboarding','secondary')}<button className="text-btn" data-live="refresh-account">Refresh status</button></section>;
+    const a = state.managed;
+    return (
+      <section className="card pad stack-sm">
+        <h2>Payment account</h2>
+        {state.accountError ? (
+          notice(state.accountError, "warning")
+        ) : a ? (
+          <>
+            <div className="between">
+              <span>Status</span>
+              {status(a.status, a.status === "ACTIVE" ? "good" : "warn")}
+            </div>
+            {(a.virtualAccounts || []).map((v) => (
+              <div className="card" key={v.id || v.accountNumber}>
+                {kv("Bank", v.bankName)}
+                {kv("Account name", v.accountName)}
+                {kv("Account number", v.accountNumber)}
+                {kv("Account status", v.status)}
+              </div>
+            ))}
+            {!a.virtualAccounts?.length &&
+              notice(
+                "Your account setup is not complete. Continue with the same settlement details to resume.",
+                "warning",
+              )}
+          </>
+        ) : (
+          <p className="muted">No managed account is set up yet.</p>
+        )}
+        <p className="small muted">
+          Paystack test mode · account setup does not mean live payments or
+          withdrawals are enabled.
+        </p>
+        {link(
+          a && !a.virtualAccounts?.length ? "Continue setup" : "Payment setup",
+          "onboarding",
+          "secondary",
+        )}
+        <button className="text-btn" data-live="refresh-account">
+          Refresh status
+        </button>
+      </section>
+    );
   }
   function onboarding() {
-    if(!can('payments.manage'))return shell('Payment setup',empty('You don’t have access','Ask your business owner to set up payments.'));
-    return shell('Set up payments',<div className="stack"><section className="card pad stack-sm"><h2>Do you have a Paystack account?</h2><p className="muted">Choose how your business will receive payments.</p><div className="chips">{link('Yes, I have Paystack','onboarding-direct','secondary')}{link('No, help me set up','onboarding-managed','primary')}</div></section>{accountCard()}{can('catalog.write') && link('Import your products from CSV','import')}</div>,{back:'home',cls:'narrow'});
+    if (!can("payments.manage"))
+      return shell(
+        "Payment setup",
+        empty(
+          "You don’t have access",
+          "Ask your business owner to set up payments.",
+        ),
+      );
+    return shell(
+      "Set up payments",
+      <div className="stack">
+        <section className="card pad stack-sm">
+          <h2>Do you have a Paystack account?</h2>
+          <p className="muted">
+            Choose how your business will receive payments.
+          </p>
+          <div className="chips">
+            {link("Yes, I have Paystack", "onboarding-direct", "secondary")}
+            {link("No, help me set up", "onboarding-managed", "primary")}
+          </div>
+        </section>
+        {accountCard()}
+        {can("catalog.write") &&
+          link("Import your products from CSV", "import")}
+      </div>,
+      { back: "home", cls: "narrow" },
+    );
   }
   function managedForm() {
-    if(!can('payments.manage'))return onboarding();
-    if(state.managed?.virtualAccounts?.length)return shell('Payment account',accountCard(),{back:'onboarding',cls:'narrow'});
-    return shell('Set up your payment account',<form id="live-managed" className="card pad stack" noValidate>{notice('This creates a Paystack test subaccount and dedicated virtual account. Live activation and provider checks remain with the backend/payment provider.')}<div className="form-grid">{field('businessName','Registered business name',api.session?.businessName || '','text','','required minlength="2"')}{field('ownerName','Owner’s full name',api.session?.name || '','text','','required minlength="2"')}{field('ownerEmail','Owner’s email',person().email,'email','','required')}{field('ownerPhone','Phone (optional)','','tel')}{field('customerFirstName','Customer first name','','text','','required')}{field('customerLastName','Customer last name','','text','','required')}{field('settlementBankCode','Settlement bank code','','text','Use the Paystack bank code supplied by your bank/setup team.','required inputmode="numeric" pattern="[0-9]{3,5}"')}{field('settlementAccountNumber','Settlement account number','','text','','required inputmode="numeric" pattern="[0-9]{8,20}" autocomplete="off"')}</div><label className="consent"><input type="checkbox" name="ownerConsent" required/> I am authorized to submit these business, contact and settlement account details to Invent IO and Paystack for account setup.</label><p className="small muted">Settlement account numbers are sent securely to the backend and are not saved in this browser.</p><p className="form-error" id="live-error"/><button className="primary" type="submit">Create test payment account</button></form>,{back:'onboarding',cls:'medium'});
+    if (!can("payments.manage")) return onboarding();
+    if (state.managed?.virtualAccounts?.length)
+      return shell("Payment account", accountCard(), {
+        back: "onboarding",
+        cls: "narrow",
+      });
+    return shell(
+      "Set up your payment account",
+      <form id="live-managed" className="card pad stack" noValidate>
+        {notice(
+          "This creates a Paystack test subaccount and dedicated virtual account. Live activation and provider checks remain with the backend/payment provider.",
+        )}
+        <div className="form-grid">
+          {field(
+            "businessName",
+            "Registered business name",
+            api.session?.businessName || "",
+            "text",
+            "",
+            'required minlength="2"',
+          )}
+          {field(
+            "ownerName",
+            "Owner’s full name",
+            api.session?.name || "",
+            "text",
+            "",
+            'required minlength="2"',
+          )}
+          {field(
+            "ownerEmail",
+            "Owner’s email",
+            person().email,
+            "email",
+            "",
+            "required",
+          )}
+          {field("ownerPhone", "Phone (optional)", "", "tel")}
+          {field(
+            "customerFirstName",
+            "Customer first name",
+            "",
+            "text",
+            "",
+            "required",
+          )}
+          {field(
+            "customerLastName",
+            "Customer last name",
+            "",
+            "text",
+            "",
+            "required",
+          )}
+          {field(
+            "settlementBankCode",
+            "Settlement bank code",
+            "",
+            "text",
+            "Use the Paystack bank code supplied by your bank/setup team.",
+            'required inputmode="numeric" pattern="[0-9]{3,5}"',
+          )}
+          {field(
+            "settlementAccountNumber",
+            "Settlement account number",
+            "",
+            "text",
+            "",
+            'required inputmode="numeric" pattern="[0-9]{8,20}" autocomplete="off"',
+          )}
+        </div>
+        <label className="consent">
+          <input type="checkbox" name="ownerConsent" required /> I am authorized
+          to submit these business, contact and settlement account details to
+          Invent IO and Paystack for account setup.
+        </label>
+        <p className="small muted">
+          Settlement account numbers are sent securely to the backend and are
+          not saved in this browser.
+        </p>
+        <p className="form-error" id="live-error" />
+        <button className="primary" type="submit">
+          Create test payment account
+        </button>
+      </form>,
+      { back: "onboarding", cls: "medium" },
+    );
   }
   function direct() {
-    return shell('Connect your Paystack account',<div className="card pad stack"><h2>Your money stays with your bank</h2><p className="muted">Your own Paystack account receives payments directly. A managed wallet is not required.</p>{notice('The backend has not exposed a DIRECT connection/setup endpoint yet. Ask the backend team to configure your webhook connection and provide your organization’s webhook URL.','warning')}<p className="caption">Do not paste a Paystack secret into an unsecured form or chat. This page does not collect or store it.</p>{link('Back to payment options','onboarding','secondary')}</div>,{back:'onboarding',cls:'narrow'});
+    return shell(
+      "Connect your Paystack account",
+      <div className="card pad stack">
+        <h2>Your money stays with your bank</h2>
+        <p className="muted">
+          Your own Paystack account receives payments directly. A managed wallet
+          is not required.
+        </p>
+        {notice(
+          "The backend has not exposed a DIRECT connection/setup endpoint yet. Ask the backend team to configure your webhook connection and provide your organization’s webhook URL.",
+          "warning",
+        )}
+        <p className="caption">
+          Do not paste a Paystack secret into an unsecured form or chat. This
+          page does not collect or store it.
+        </p>
+        {link("Back to payment options", "onboarding", "secondary")}
+      </div>,
+      { back: "onboarding", cls: "narrow" },
+    );
   }
   function changePassword() {
-    return shell('Change password',<form id="live-change-password" className="card pad stack" noValidate>{field('currentPassword','Current password','','password','','required autocomplete="current-password"')}{field('newPassword','New password','','password','At least 8 characters','required minlength="8" autocomplete="new-password"')}{field('confirm','Confirm new password','','password','','required autocomplete="new-password"')}<p className="form-error" id="live-error" role="alert"/><button className="primary" type="submit">Save password</button></form>,{back:'account',cls:'narrow'});
+    return shell(
+      "Change password",
+      <form id="live-change-password" className="card pad stack" noValidate>
+        {field(
+          "currentPassword",
+          "Current password",
+          "",
+          "password",
+          "",
+          'required autocomplete="current-password"',
+        )}
+        {field(
+          "newPassword",
+          "New password",
+          "",
+          "password",
+          "At least 8 characters",
+          'required minlength="8" autocomplete="new-password"',
+        )}
+        {field(
+          "confirm",
+          "Confirm new password",
+          "",
+          "password",
+          "",
+          'required autocomplete="new-password"',
+        )}
+        <p className="form-error" id="live-error" role="alert" />
+        <button className="primary" type="submit">
+          Save password
+        </button>
+      </form>,
+      { back: "account", cls: "narrow" },
+    );
   }
   function account() {
-    const biz=state.tenant?.businessName || api.session?.businessName;
-    const role=state.tenant?.permissions?.includes('*')?'Owner':'Staff';
-    const row=(label,value)=><div className="acct-row"><span className="acct-label">{label}</span><strong>{value || '\u2014'}</strong></div>;
-    return shell('Account',<section className="card acct-card">{row('Name',person().name)}{row('Email',person().email)}{row('Role',[role,biz].filter(Boolean).join(' \u00b7 '))}<a className="acct-row acct-link acct-notif" href="#/notification-settings"><span><strong>Notifications</strong><span className="acct-label">Browser alerts for payments and stock</span></span>{ico('caret')}</a><p className="caption muted acct-note">To change your password, use “Forgot password” on the log-in screen.</p><div className="acct-actions"><button className="text-btn acct-logout" data-live="logout"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 4H5.5A1.5 1.5 0 0 0 4 5.500v9A1.500 1.500 0 0 0 5.500 16H8M12.500 6.500 16 10l-3.500 3.500M16 10H8"/></svg>Log out</button></div></section>,{cls:'narrow',mobileBack:'more'});
+    const biz = state.tenant?.businessName || api.session?.businessName;
+    const role = state.tenant?.permissions?.includes("*") ? "Owner" : "Staff";
+    const row = (label, value) => (
+      <div className="acct-row">
+        <span className="acct-label">{label}</span>
+        <strong>{value || "\u2014"}</strong>
+      </div>
+    );
+    return shell(
+      "Account",
+      <section className="card acct-card">
+        {row("Name", person().name)}
+        {row("Email", person().email)}
+        {row("Role", [role, biz].filter(Boolean).join(" \u00b7 "))}
+        <a
+          className="acct-row acct-link acct-notif"
+          href="#/notification-settings"
+        >
+          <span>
+            <strong>Notifications</strong>
+            <span className="acct-label">
+              Browser alerts for payments and stock
+            </span>
+          </span>
+          {ico("caret")}
+        </a>
+        <p className="caption muted acct-note">
+          To change your password, use “Forgot password” on the log-in screen.
+        </p>
+        <div className="acct-actions">
+          <button className="text-btn acct-logout" data-live="logout">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M8 4H5.5A1.5 1.5 0 0 0 4 5.500v9A1.500 1.500 0 0 0 5.500 16H8M12.500 6.500 16 10l-3.500 3.500M16 10H8" />
+            </svg>
+            Log out
+          </button>
+        </div>
+      </section>,
+      { cls: "narrow", mobileBack: "more" },
+    );
   }
   function moreScreen() {
-    const r=(to,label,sub)=><a className="acct-row acct-link" href={`#/${to}`}><span><strong>{label}</strong>{sub && <span className="acct-label">{sub}</span>}</span>{ico('caret')}</a>;
-    return shell('More',<section className="card acct-card">{r('account','Account',person().email)}{r('notification-settings','Notifications','Browser alerts for payments and stock')}{can('payments.manage') && r('onboarding','Payment setup')}{can('payments.manage') && r('admin','Account overview')}<div className="acct-actions"><button className="text-btn acct-logout" data-live="logout">Log out</button></div></section>,{active:'more',cls:'narrow'});
+    const r = (to, label, sub) => (
+      <a className="acct-row acct-link" href={`#/${to}`}>
+        <span>
+          <strong>{label}</strong>
+          {sub && <span className="acct-label">{sub}</span>}
+        </span>
+        {ico("caret")}
+      </a>
+    );
+    return shell(
+      "More",
+      <section className="card acct-card">
+        {r("account", "Account", person().email)}
+        {r(
+          "notification-settings",
+          "Notifications",
+          "Browser alerts for payments and stock",
+        )}
+        {can("payments.manage") && r("onboarding", "Payment setup")}
+        {can("payments.manage") && r("admin", "Account overview")}
+        <div className="acct-actions">
+          <button className="text-btn acct-logout" data-live="logout">
+            Log out
+          </button>
+        </div>
+      </section>,
+      { active: "more", cls: "narrow" },
+    );
   }
   function notificationSettings() {
-    return shell('Notifications',<section className="card pad stack-sm"><h2>Browser alerts</h2><p className="caption muted">Payment and low-stock alerts reach this device after you allow notifications.</p>{notificationControls()}</section>,{back:'account',active:'account',cls:'narrow'});
+    return shell(
+      "Notifications",
+      <section className="card pad stack-sm">
+        <h2>Browser alerts</h2>
+        <p className="caption muted">
+          Payment and low-stock alerts reach this device after you allow
+          notifications.
+        </p>
+        {notificationControls()}
+      </section>,
+      { back: "account", active: "account", cls: "narrow" },
+    );
   }
   function admin() {
-    if(!can('payments.manage'))return shell('Accounts',empty('You don’t have access','Only an authorized account manager can view payment setup.'));
-    return shell('Account overview',<div className="stack">{notice('This view is limited to your authenticated organization. Cross-merchant account listing, approvals and admin roles need a backend admin API; no cross-merchant actions are available.','warning')}{accountCard()}{link('Merchant self-onboarding','onboarding','primary')}</div>,{back:'home',cls:'narrow'});
+    if (!can("payments.manage"))
+      return shell(
+        "Accounts",
+        empty(
+          "You don’t have access",
+          "Only an authorized account manager can view payment setup.",
+        ),
+      );
+    return shell(
+      "Account overview",
+      <div className="stack">
+        {notice(
+          "This view is limited to your authenticated organization. Cross-merchant account listing, approvals and admin roles need a backend admin API; no cross-merchant actions are available.",
+          "warning",
+        )}
+        {accountCard()}
+        {link("Merchant self-onboarding", "onboarding", "primary")}
+      </div>,
+      { back: "home", cls: "narrow" },
+    );
   }
   function paymentRows(rows) {
-    return rows.length?<div className="card">{rows.map(p=><button key={p.id} className="list-link" data-live="begin-match" data-id={p.id}><span className="payment-method">{ico('homeTransfer')}</span><div className="grow"><strong>{formatMinor(p.amountMinor)}</strong><p>{p.method || p.channel || p.provider || 'Payment'} · {p.providerReference || p.reference || ''}</p></div>{ico('caret')}</button>)}</div>:empty('No pending payments','Confirmed payments waiting for products will appear here.');
+    return rows.length ? (
+      <div className="card">
+        {rows.map((p) => (
+          <button
+            key={p.id}
+            className="list-link"
+            data-live="begin-match"
+            data-id={p.id}
+          >
+            <span className="payment-method">{ico("homeTransfer")}</span>
+            <div className="grow">
+              <strong>{formatMinor(p.amountMinor)}</strong>
+              <p>
+                {p.method || p.channel || p.provider || "Payment"} ·{" "}
+                {p.providerReference || p.reference || ""}
+              </p>
+            </div>
+            {ico("caret")}
+          </button>
+        ))}
+      </div>
+    ) : (
+      empty(
+        "No pending payments",
+        "Confirmed payments waiting for products will appear here.",
+      )
+    );
   }
-  const chip=(key,value,label)=><button key={value} className={'chip-filter'+(state[key]===value?' on':'')} data-live="set-ui" data-key={key} data-value={value} aria-pressed={state[key]===value}>{state[key]===value && <span className="chip-check" aria-hidden="true">{'\u2713'}</span>}{label}</button>;
-  const payAt=p=>Date.parse(p.paidAt||p.createdAt||p.receivedAt)||0;
-  const inRange=(iso,range)=>{const t=Date.parse(iso);if(!t)return false;const d=new Date();d.setHours(0,0,0,0);const day=864e5;const from={today:d.getTime(),yesterday:d.getTime()-day,week:d.getTime()-((d.getDay()+6)%7)*day}[range];const to=range==='yesterday'?d.getTime():Infinity;return t>=from && t<to;};
+  const chip = (key, value, label) => (
+    <button
+      key={value}
+      className={"chip-filter" + (state[key] === value ? " on" : "")}
+      data-live="set-ui"
+      data-key={key}
+      data-value={value}
+      aria-pressed={state[key] === value}
+    >
+      {state[key] === value && (
+        <span className="chip-check" aria-hidden="true">
+          {"\u2713"}
+        </span>
+      )}
+      {label}
+    </button>
+  );
+  const payAt = (p) => Date.parse(p.paidAt || p.createdAt || p.receivedAt) || 0;
+  const inRange = (iso, range) => {
+    const t = Date.parse(iso);
+    if (!t) return false;
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    const day = 864e5;
+    const from = {
+      today: d.getTime(),
+      yesterday: d.getTime() - day,
+      week: d.getTime() - ((d.getDay() + 6) % 7) * day,
+    }[range];
+    const to = range === "yesterday" ? d.getTime() : Infinity;
+    return t >= from && t < to;
+  };
   function salesScreen() {
-    const pendingList=[...state.payments].sort((x,y)=>state.salesSort==='oldest'?payAt(x)-payAt(y):payAt(y)-payAt(x));
-    const recorded=state.sales.filter(x=>inRange(x.createdAt,state.salesRange));
-    const hhmm=iso=>iso?new Date(iso).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'\u2014';
-    const itemsText=x=>(x.items||[]).map(i=>(state.products.find(p=>p.id===i.productId)?.name||'Product')+' \u00d7'+i.qty).join(', ')||'\u2014';
-    return shell('Sales',<div className="stack"><div className="chip-row">{chip('salesTab','pending','Pending payments ('+state.payments.length+')')}{can('reports.view') && chip('salesTab','recorded','Recorded')}<span className="chip-gap" />{state.salesTab==='pending'?<><span className="chip-label">Sort</span>{chip('salesSort','oldest','Oldest first')}{chip('salesSort','newest','Newest first')}</>:<>{chip('salesRange','today','Today')}{chip('salesRange','yesterday','Yesterday')}{chip('salesRange','week','This week')}</>}</div>{state.coreErrors.map((e,i)=><React.Fragment key={i}>{notice(e,'warning')}</React.Fragment>)}{state.salesTab==='pending'||!can('reports.view')?(pendingList.length?<><div className="pay-table sales-table" role="table"><div className="pay-row pay-head" role="row"><span>Amount</span><span>How they paid</span><span>Customer / recorded by</span><span>Received</span><span>Note</span><span /></div>{pendingList.map(p=>{const at=p.paidAt||p.createdAt||p.receivedAt;const old=at && Date.now()-Date.parse(at)>864e5;return <div key={p.id} className="pay-row" role="row"><strong>{formatMinor(p.amountMinor)}</strong><span>{[p.method||p.channel,p.provider].filter(Boolean).join(' \u00b7 ')||'\u2014'}{(p.providerReference||p.reference) && <small className="pay-ref">{p.providerReference||p.reference}</small>}</span><span>{p.customerName||p.recordedBy||'\u2014'}</span><span>{ago(at)}</span><span>{old?<span className="pay-old">Over a day old</span>:''}</span><button className="secondary pay-cta" data-live="begin-match" data-id={p.id}>+ What did you sell?</button></div>;})}</div><p className="caption muted">Oldest first so nothing is missed. Pending payments don’t count in sales until products are recorded.</p></>:empty('No pending payments','Confirmed payments waiting for products will appear here.')):(recorded.length?<div className="pay-table sale-rows" role="table"><div className="pay-row pay-head" role="row"><span>Amount</span><span>Items</span><span>Time</span><span>Status</span></div>{recorded.map(x=><a key={x.id} className="pay-row" role="row" href={`#/sale-detail?id=${encodeURIComponent(x.id)}`}><strong>{formatMinor(x.total)}</strong><span className="pay-items">{itemsText(x)}</span><span>{hhmm(x.createdAt)}</span><span>{x.flagged?status('Review difference','warn'):status('Recorded','good')}</span></a>)}</div>:empty('No recorded sales','Confirmed sales for this period will appear here.'))}</div>);
+    const pendingList = [...state.payments].sort((x, y) =>
+      state.salesSort === "oldest" ? payAt(x) - payAt(y) : payAt(y) - payAt(x),
+    );
+    const recorded = state.sales.filter((x) =>
+      inRange(x.createdAt, state.salesRange),
+    );
+    const hhmm = (iso) =>
+      iso
+        ? new Date(iso).toLocaleTimeString("en-GB", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : "\u2014";
+    const itemsText = (x) =>
+      (x.items || [])
+        .map(
+          (i) =>
+            (state.products.find((p) => p.id === i.productId)?.name ||
+              "Product") +
+            " \u00d7" +
+            i.qty,
+        )
+        .join(", ") || "\u2014";
+    return shell(
+      "Sales",
+      <div className="stack">
+        <div className="chip-row">
+          {chip(
+            "salesTab",
+            "pending",
+            "Pending payments (" + state.payments.length + ")",
+          )}
+          {can("reports.view") && chip("salesTab", "recorded", "Recorded")}
+          <span className="chip-gap" />
+          {state.salesTab === "pending" ? (
+            <>
+              <span className="chip-label">Sort</span>
+              {chip("salesSort", "oldest", "Oldest first")}
+              {chip("salesSort", "newest", "Newest first")}
+            </>
+          ) : (
+            <>
+              {chip("salesRange", "today", "Today")}
+              {chip("salesRange", "yesterday", "Yesterday")}
+              {chip("salesRange", "week", "This week")}
+            </>
+          )}
+        </div>
+        {state.coreErrors.map((e, i) => (
+          <React.Fragment key={i}>{notice(e, "warning")}</React.Fragment>
+        ))}
+        {state.salesTab === "pending" || !can("reports.view") ? (
+          pendingList.length ? (
+            <>
+              <div className="pay-table sales-table" role="table">
+                <div className="pay-row pay-head" role="row">
+                  <span>Amount</span>
+                  <span>How they paid</span>
+                  <span>Customer / recorded by</span>
+                  <span>Received</span>
+                  <span>Note</span>
+                  <span />
+                </div>
+                {pendingList.map((p) => {
+                  const at = p.paidAt || p.createdAt || p.receivedAt;
+                  const old = at && Date.now() - Date.parse(at) > 864e5;
+                  return (
+                    <div key={p.id} className="pay-row" role="row">
+                      <strong>{formatMinor(p.amountMinor)}</strong>
+                      <span>
+                        {[p.method || p.channel, p.provider]
+                          .filter(Boolean)
+                          .join(" \u00b7 ") || "\u2014"}
+                        {(p.providerReference || p.reference) && (
+                          <small className="pay-ref">
+                            {p.providerReference || p.reference}
+                          </small>
+                        )}
+                      </span>
+                      <span>{p.customerName || p.recordedBy || "\u2014"}</span>
+                      <span>{ago(at)}</span>
+                      <span>
+                        {old ? (
+                          <span className="pay-old">Over a day old</span>
+                        ) : (
+                          ""
+                        )}
+                      </span>
+                      <button
+                        className="secondary pay-cta"
+                        data-live="begin-match"
+                        data-id={p.id}
+                      >
+                        + What did you sell?
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="caption muted">
+                Oldest first so nothing is missed. Pending payments don’t count
+                in sales until products are recorded.
+              </p>
+            </>
+          ) : (
+            empty(
+              "No pending payments",
+              "Confirmed payments waiting for products will appear here.",
+            )
+          )
+        ) : recorded.length ? (
+          <div className="pay-table sale-rows" role="table">
+            <div className="pay-row pay-head" role="row">
+              <span>Amount</span>
+              <span>Items</span>
+              <span>Time</span>
+              <span>Status</span>
+            </div>
+            {recorded.map((x) => (
+              <a
+                key={x.id}
+                className="pay-row"
+                role="row"
+                href={`#/sale-detail?id=${encodeURIComponent(x.id)}`}
+              >
+                <strong>{formatMinor(x.total)}</strong>
+                <span className="pay-items">{itemsText(x)}</span>
+                <span>{hhmm(x.createdAt)}</span>
+                <span>
+                  {x.flagged
+                    ? status("Review difference", "warn")
+                    : status("Recorded", "good")}
+                </span>
+              </a>
+            ))}
+          </div>
+        ) : (
+          empty(
+            "No recorded sales",
+            "Confirmed sales for this period will appear here.",
+          )
+        )}
+      </div>,
+    );
   }
   function saleDetail(id) {
-    const sale=state.sales.find(s=>s.id===id);
-    if(!sale)return shell('Sale',empty('Sale not found','Open Recorded sales and refresh the list.'),{back:'sales'});
-    return shell('Sale detail',<div className="stack"><section className="card pad stack-sm"><h2>Recorded sale</h2>{kv('Recorded',new Date(sale.createdAt).toLocaleString())}{kv('Total',formatMinor(sale.total))}{can('reports.view') && kv('Profit',formatMinor(sale.margin))}{kv('Difference',formatMinor(sale.variance || 0))}</section><div className="card">{(sale.items || []).map((i,index)=><div key={i.id || index} className="list-link"><div className="grow"><strong>{state.products.find(p=>p.id===i.productId)?.name || 'Product'}</strong><p>{i.qty} × {formatMinor(i.unitPrice)}</p></div><strong>{formatMinor(BigInt(i.unitPrice)*BigInt(i.qty))}</strong></div>)}</div></div>,{back:'sales',cls:'narrow'});
+    const sale = state.sales.find((s) => s.id === id);
+    if (!sale)
+      return shell(
+        "Sale",
+        empty("Sale not found", "Open Recorded sales and refresh the list."),
+        { back: "sales" },
+      );
+    return shell(
+      "Sale detail",
+      <div className="stack">
+        <section className="card pad stack-sm">
+          <h2>Recorded sale</h2>
+          {kv("Recorded", new Date(sale.createdAt).toLocaleString())}
+          {kv("Total", formatMinor(sale.total))}
+          {can("reports.view") && kv("Profit", formatMinor(sale.margin))}
+          {kv("Difference", formatMinor(sale.variance || 0))}
+        </section>
+        <div className="card">
+          {(sale.items || []).map((i, index) => (
+            <div key={i.id || index} className="list-link">
+              <div className="grow">
+                <strong>
+                  {state.products.find((p) => p.id === i.productId)?.name ||
+                    "Product"}
+                </strong>
+                <p>
+                  {i.qty} × {formatMinor(i.unitPrice)}
+                </p>
+              </div>
+              <strong>
+                {formatMinor(BigInt(i.unitPrice) * BigInt(i.qty))}
+              </strong>
+            </div>
+          ))}
+        </div>
+      </div>,
+      { back: "sales", cls: "narrow" },
+    );
   }
   function recordPayment() {
-    if(!can('sales.allocate'))return shell('Record payment',empty('You don’t have access','Ask your business owner for permission to record sales.'));
-    const branches=state.tenant?.branches || [];
-    return shell('Record payment',<form id="live-cash-payment" className="card pad stack" noValidate><h2>Record cash received</h2>{field('amount','Amount received (₦)','','text','','required inputmode="decimal"')}{!state.tenant?.branchId && (branches.length?<label className="field">Branch<select name="branchId" required>{branches.map(b=><option value={b.id} key={b.id}>{b.name}</option>)}</select></label>:notice('Your branch list is unavailable. Update the backend workspace endpoint before recording a cash payment.','warning'))}<p className="caption muted">Paystack transfers arrive automatically. This form records cash only.</p><p className="form-error" id="live-error" role="alert"/><button className="primary" type="submit" disabled={!state.tenant?.branchId && !branches.length}>Continue to products</button></form>,{back:'sales',cls:'narrow'});
+    if (!can("sales.allocate"))
+      return shell(
+        "Record payment",
+        empty(
+          "You don’t have access",
+          "Ask your business owner for permission to record sales.",
+        ),
+      );
+    const branches = state.tenant?.branches || [];
+    return shell(
+      "Record payment",
+      <form id="live-cash-payment" className="card pad stack" noValidate>
+        <h2>Record cash received</h2>
+        {field(
+          "amount",
+          "Amount received (₦)",
+          "",
+          "text",
+          "",
+          'required inputmode="decimal"',
+        )}
+        {!state.tenant?.branchId &&
+          (branches.length ? (
+            <label className="field">
+              Branch
+              <select name="branchId" required>
+                {branches.map((b) => (
+                  <option value={b.id} key={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            notice(
+              "Your branch list is unavailable. Update the backend workspace endpoint before recording a cash payment.",
+              "warning",
+            )
+          ))}
+        <p className="caption muted">
+          Paystack transfers arrive automatically. This form records cash only.
+        </p>
+        <p className="form-error" id="live-error" role="alert" />
+        <button
+          className="primary"
+          type="submit"
+          disabled={!state.tenant?.branchId && !branches.length}
+        >
+          Continue to products
+        </button>
+      </form>,
+      { back: "sales", cls: "narrow" },
+    );
   }
   function matchScreen() {
-    const p=state.payments.find(p=>p.id===state.paymentId);
-    if(!p)return shell('Record sale',empty('Choose a payment','Select a pending payment to record what was sold.',link('Pending payments','sales','primary')));
-    const items=selectedItems(),total=items.reduce((sum,i)=>sum+BigInt(i.product.price)*BigInt(i.qty),0n),difference=BigInt(p.amountMinor)-total;
-    return shell('What did you sell?',<div className="selection-grid"><section className="card pad stack-sm"><div className="payment-summary"><strong className="money-lg">{formatMinor(p.amountMinor)}</strong><p className="caption muted">{p.providerReference || p.reference || 'Confirmed payment'}</p></div>{state.catalogError && notice(state.catalogError,'warning')}<div className="product-picker">{state.products.filter(p=>p.active!==false).map(p=><div key={p.id} className={`pick-card ${state.quantities[p.id]?'selected':''}`}><div className="grow"><h3>{p.name}</h3><span className="caption">{formatMinor(p.price)}</span></div><div className="quantity">{state.quantities[p.id]>0 && <><button data-live="live-quantity" data-id={p.id} data-delta="-1" aria-label={`Remove one ${p.name}`} disabled={state.allocating}>−</button><strong>{state.quantities[p.id]}</strong></>}<button className={state.quantities[p.id]?'':'quantity-add'} data-live="live-quantity" data-id={p.id} data-delta="1" aria-label={`Add one ${p.name}`} disabled={state.allocating}>{state.quantities[p.id]?'+':'+ Add'}</button></div></div>)}</div></section><section className="card pad stack-sm"><h2>Review sale</h2>{kv('Products total',formatMinor(total))}{kv('Paid',formatMinor(p.amountMinor))}{difference!==0n?notice('Difference: '+formatMinor(difference)+'. Discounts and tips are allowed. The server records and flags the variance.','warning'):notice('Matches the payment.')}<p className="form-error" id="allocate-error" role="alert"/><button className="primary" data-live="allocate" disabled={!items.length || state.allocating}>{state.allocating?'Confirming…':'Confirm sale'}</button><p className="small muted">The server updates stock when the sale is confirmed. Negative stock is allowed and flagged.</p></section></div>,{back:'sales'});
+    const p = state.payments.find((p) => p.id === state.paymentId);
+    if (!p)
+      return shell(
+        "Record sale",
+        empty(
+          "Choose a payment",
+          "Select a pending payment to record what was sold.",
+          link("Pending payments", "sales", "primary"),
+        ),
+      );
+    const items = selectedItems(),
+      total = items.reduce(
+        (sum, i) => sum + BigInt(i.product.price) * BigInt(i.qty),
+        0n,
+      ),
+      difference = BigInt(p.amountMinor) - total;
+    return shell(
+      "What did you sell?",
+      <div className="selection-grid">
+        <section className="card pad stack-sm">
+          <div className="payment-summary">
+            <strong className="money-lg">{formatMinor(p.amountMinor)}</strong>
+            <p className="caption muted">
+              {p.providerReference || p.reference || "Confirmed payment"}
+            </p>
+          </div>
+          {state.catalogError && notice(state.catalogError, "warning")}
+          <div className="product-picker">
+            {state.products
+              .filter((p) => p.active !== false)
+              .map((p) => (
+                <div
+                  key={p.id}
+                  className={`pick-card ${state.quantities[p.id] ? "selected" : ""}`}
+                >
+                  <div className="grow">
+                    <h3>{p.name}</h3>
+                    <span className="caption">{formatMinor(p.price)}</span>
+                  </div>
+                  <div className="quantity">
+                    {state.quantities[p.id] > 0 && (
+                      <>
+                        <button
+                          data-live="live-quantity"
+                          data-id={p.id}
+                          data-delta="-1"
+                          aria-label={`Remove one ${p.name}`}
+                          disabled={state.allocating}
+                        >
+                          −
+                        </button>
+                        <strong>{state.quantities[p.id]}</strong>
+                      </>
+                    )}
+                    <button
+                      className={state.quantities[p.id] ? "" : "quantity-add"}
+                      data-live="live-quantity"
+                      data-id={p.id}
+                      data-delta="1"
+                      aria-label={`Add one ${p.name}`}
+                      disabled={state.allocating}
+                    >
+                      {state.quantities[p.id] ? "+" : "+ Add"}
+                    </button>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </section>
+        <section className="card pad stack-sm">
+          <h2>Review sale</h2>
+          {kv("Products total", formatMinor(total))}
+          {kv("Paid", formatMinor(p.amountMinor))}
+          {difference !== 0n
+            ? notice(
+                "Difference: " +
+                  formatMinor(difference) +
+                  ". Discounts and tips are allowed. The server records and flags the variance.",
+                "warning",
+              )
+            : notice("Matches the payment.")}
+          <p className="form-error" id="allocate-error" role="alert" />
+          <button
+            className="primary"
+            data-live="allocate"
+            disabled={!items.length || state.allocating}
+          >
+            {state.allocating ? "Confirming…" : "Confirm sale"}
+          </button>
+          <p className="small muted">
+            The server updates stock when the sale is confirmed. Negative stock
+            is allowed and flagged.
+          </p>
+        </section>
+      </div>,
+      { back: "sales" },
+    );
   }
-  return {moreScreen,notificationSettings,shell,auth,home,products,importScreen,editor,onboarding,managedForm,direct,changePassword,
-    checkEmail:()=><CheckEmail api={api}/>,verifyPending:()=><VerifyPending api={api}/>,verifyEmailScreen:(params=new URLSearchParams(location.hash.split('?')[1]))=><VerifyResult token={params.get('token')} verify={verify} api={api}/>,account,admin,salesScreen,saleDetail,recordPayment,matchScreen};
+
+  function setupBusiness() {
+  return <AuthFrame title="Set up your business" back="home">
+    <h1 className="auth-title desktop-only">Set up your business</h1>
+    <p className="status-text">Where should your weekly summary of sales and stock go?</p>
+    <form id="live-setup-business" className="stack" noValidate>
+      {field('whatsapp','WhatsApp number',state.setup?.whatsapp||'','tel','e.g. 0803 123 4567','autocomplete="tel"')}
+      {field('summaryEmail','Email for weekly summary',state.setup?.summaryEmail||person().email,'email','Your login email. Change it if you like.')}
+      <p className="form-error" id="live-error" role="alert"/>
+      <div className="auth-bottom">
+        <button className="primary" type="submit">Continue</button>
+        <button type="button" className="text-btn" data-live="go" data-to="setup-products">Skip WhatsApp for now</button>
+      </div>
+    </form>
+  </AuthFrame>;
+}
+function setupProducts() {
+  const n=state.setupCount||0;
+  return <AuthFrame title="Add your products" back="setup-business">
+    <h1 className="auth-title desktop-only">Add your products</h1>
+    <p className="status-text">{n?`${n} added. Add another, or continue.`:'Add the products you sell, one by one. You can import more later.'}</p>
+    <form key={state.formNonce} id="live-setup-product" className="stack" noValidate>
+      {field('name','Product name','','text','','required')}
+      <div className="pair">
+        {field('price','Selling price (₦)','','text','','required inputmode="decimal"')}
+        {field('cost','Cost price (₦)','','text','Used to work out your profit.','required inputmode="decimal"')}
+      </div>
+      <div className="pair">
+        {field('stock','Stock you have now','','text','','required inputmode="numeric"')}
+        {field('threshold','Low stock alert at','','text','Warn me at this count.','required inputmode="numeric"')}
+      </div>
+      <p className="form-error" id="live-error" role="alert"/>
+      <div className="auth-bottom">
+        <button className="primary" type="submit" data-again="1">Save &amp; add another</button>
+        <button className="secondary" type="submit">Save &amp; continue</button>
+        <button type="button" className="text-btn" data-live="go" data-to="setup-done">I’ll do this later</button>
+      </div>
+    </form>
+  </AuthFrame>;
+}
+function setupDone() {
+  const biz=state.tenant?.businessName||api.session?.businessName||'Your business';
+  return <AuthFrame title={biz+' is ready'} bigTitle>
+    <StatusBlock kind="check" title={biz+' is ready'}>When a customer pays, tap what they bought. The sale is recorded and your stock updates itself.</StatusBlock>
+    <div className="auth-bottom">{link('Go to Home','home','primary')}</div>
+  </AuthFrame>;
+}
+
+  return {
+    setupBusiness,
+    setupProducts,
+    setupDone,
+    moreScreen,
+    notificationSettings,
+    shell,
+    auth,
+    home,
+    products,
+    importScreen,
+    editor,
+    onboarding,
+    managedForm,
+    direct,
+    changePassword,
+    checkEmail: () => <CheckEmail api={api} />,
+    verifyPending: () => <VerifyPending api={api} />,
+    verifyEmailScreen: (
+      params = new URLSearchParams(location.hash.split("?")[1]),
+    ) => <VerifyResult token={params.get("token")} verify={verify} api={api} />,
+    account,
+    admin,
+    salesScreen,
+    saleDetail,
+    recordPayment,
+    matchScreen,
+  };
 }

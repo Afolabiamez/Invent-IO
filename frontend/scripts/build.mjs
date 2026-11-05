@@ -1,9 +1,11 @@
 import {cp,mkdir,rm,writeFile} from 'node:fs/promises';
 import {build} from 'esbuild';
+import { fileURLToPath } from "node:url";
+
 const output=new URL('../dist/',import.meta.url);
 await rm(output,{recursive:true,force:true});
 await mkdir(output,{recursive:true});
-await build({entryPoints:[new URL('../src/App.jsx',import.meta.url).pathname],bundle:true,minify:true,format:'esm',jsx:'automatic',outfile:new URL('app.js',output).pathname,define:{'process.env.NODE_ENV':'"production"'},metafile:true}).then(async result=>writeFile(new URL('build-meta.json',output),JSON.stringify(result.metafile,null,2)));
+await build({entryPoints:[fileURLToPath(new URL('../src/App.jsx',import.meta.url))],bundle:true,minify:true,format:'esm',jsx:'automatic',outfile:fileURLToPath(new URL('app.js',output)),define:{'process.env.NODE_ENV':'"production"'},metafile:true}).then(async result=>writeFile(new URL('build-meta.json',output),JSON.stringify(result.metafile,null,2)));
 for(const name of ['assets','style.css','manifest.webmanifest','catalog-template.csv','sw.js'])await cp(new URL('../public/'+name,import.meta.url),new URL(name,output),{recursive:true});
 // Published assets exclude the isolated design review and its fixtures.
 await rm(new URL('assets/figma/',output),{recursive:true,force:true});
