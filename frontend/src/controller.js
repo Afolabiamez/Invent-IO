@@ -131,6 +131,8 @@ export function createMerchantController({ ui, rerender }) {
     saleDetail,
     recordPayment,
     weeklySummary,
+    staffMember,
+    staffPermissions,
     subscription,
     plans,
     wallet,
@@ -317,6 +319,8 @@ export function createMerchantController({ ui, rerender }) {
       "weekly-summary": weeklySummary,
       team,
       "invite-staff": inviteStaff,
+      "staff-member": () => staffMember(params.get("name") || "Staff member"),
+      "staff-permissions": () => staffPermissions(params.get("name") || "Staff member"),
       subscription,
       plans,
       wallet,
@@ -605,9 +609,29 @@ export function createMerchantController({ ui, rerender }) {
         toast("Invite links aren’t available yet.");
         return;
       }
-      if (action === "toggle-notifs") {
-        state.notifOpen = !state.notifOpen;
+      if (action === "toggle-notifs" || action === "notifs-retry") {
+        state.notifOpen = action === "notifs-retry" ? true : !state.notifOpen;
+        if (state.notifOpen) {
+          state.notifState = "loading";
+          rerender();
+          try {
+            await loadCore();
+            state.notifState = state.coreErrors?.length ? "error" : "ready";
+          } catch {
+            state.notifState = "error";
+          }
+        }
         rerender();
+        return;
+      }
+      if (action === "remove-open" || action === "remove-close") {
+        state.removeOpen = action === "remove-open";
+        rerender();
+        return;
+      }
+      if (action === "remove-confirm") {
+        const e = document.getElementById("live-error");
+        if (e) e.textContent = "Removing staff isn’t available yet.";
         return;
       }
       if (action === "notifs-read") {
@@ -876,6 +900,9 @@ export function createMerchantController({ ui, rerender }) {
         return;
       }
 
+      if (form.id === "live-staff-permissions") {
+        throw new Error("Saving permissions isn’t available yet.");
+      }
       if (form.id === "live-withdraw") {
         const minor = nairaToMinor(data.amount);
         if (BigInt(minor) <= 0n) throw new Error("Enter an amount greater than zero.");

@@ -3354,3 +3354,20 @@ body:has(.back-office) .demo-banner + .back-office .admin-sidebar { top:30px; he
 .photo-row{display:flex;gap:16px;align-items:center}
 .photo-add{width:72px;height:72px;border:1px dashed #78716c;border-radius:12px;background:#eeedeb;display:flex;align-items:center;justify-content:center;flex:none}
 .photo-btn{height:40px;padding:0 12px;gap:4px;margin-top:4px;background:#fff;font-size:14px;width:fit-content}
+
+/* Staff, permissions, notification states (Figma W-MO-07/08, W-NT-04/05) */
+.staff-head{display:flex;gap:12px;align-items:center}.staff-head p{margin:0}
+.caption.ok{color:#0f6b5c;font-weight:600}
+button.danger{background:#c4211c;color:#fff;border:0;border-radius:12px;height:52px;padding:0 24px;font-weight:600;font-size:16px}
+.perm-grid{display:grid;gap:24px}@media(min-width:900px){.perm-grid{grid-template-columns:repeat(3,1fr);align-items:start}}
+.perm-col{padding:16px;display:flex;flex-direction:column;gap:0}
+.perm-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid #e7e5e4;cursor:pointer;position:relative}
+.perm-row input{position:absolute;opacity:0;right:0;width:52px;height:32px;margin:0}
+.switch{width:52px;height:32px;border-radius:16px;border:2px solid #78716c;background:#fff;position:relative;flex:none}
+.switch::after{content:"";position:absolute;top:4px;left:4px;width:20px;height:20px;border-radius:50%;background:#78716c;transition:left .15s}
+.perm-row input:checked + .switch{background:#0f6b5c;border-color:#0f6b5c}
+.perm-row input:checked + .switch::after{left:24px;background:#fff}
+.notif-skel{padding:8px 20px}.skel-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0}
+.skel{display:block;height:14px;border-radius:4px;background:#eeedeb}.skel.w60{width:55%}.skel.pill{width:56px;height:24px}
+.notif-error{display:flex;flex-direction:column;align-items:center;gap:8px;padding:32px 20px;text-align:center}.notif-error p{margin:0;color:#57534e}
+.po-icon.err{background:#fde8e6;width:48px;height:48px}

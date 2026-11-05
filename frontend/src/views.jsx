@@ -44,8 +44,12 @@ export function createViews({
   ) {
     const nav = [
       ["home", "Home", "navHome"],
-      ...(can("sales.allocate") ? [["sales", "Sales", "navSales"]] : []),
-      ...(can("catalog.read") ? [["products", "Products", "navProducts"]] : []),
+      ...(can("sales.allocate")
+        ? [["sales", can("payments.manage") ? "Sales" : "My sales", "navSales"]]
+        : []),
+      ...(can("catalog.read")
+        ? [["products", can("payments.manage") ? "Products" : "Stock", "navProducts"]]
+        : []),
     ];
     const unread = state.notifRead ? 0 : state.payments.length;
     const notifPanel = () => (
@@ -55,7 +59,20 @@ export function createViews({
           <button type="button" className="text-btn" data-live="notifs-read">Mark all as read</button>
           <a href="#/notification-settings" aria-label="Notification settings">{ico("navSettings")}</a>
         </div>
-        {state.payments.length ? (
+        {state.notifState === "loading" ? (
+          <div className="notif-skel" aria-busy="true">
+            {[0, 1, 2, 3].map((i) => (
+              <div className="skel-row" key={i}><span className="skel w60" /><span className="skel pill" /></div>
+            ))}
+          </div>
+        ) : state.notifState === "error" ? (
+          <div className="notif-error">
+            <span className="po-icon err">{ico("connectionError")}</span>
+            <strong>Couldn’t load notifications</strong>
+            <p>Check your connection and try again.</p>
+            <button type="button" className="primary" data-live="notifs-retry">Try again</button>
+          </div>
+        ) : state.payments.length ? (
           state.payments.slice(0, 5).map((p) => (
             <a key={p.id} className={"notif-item" + (unread ? " unread" : "")} href="#/sales">
               <span className="po-icon">{ico("cash")}</span>
@@ -82,6 +99,8 @@ export function createViews({
     const navKey =
       {
         wallet: "home",
+        "staff-member": "team",
+        "staff-permissions": "team",
         subscription: "business-settings",
         plans: "business-settings",
         "withdrawal-account": "business-settings",
@@ -561,8 +580,8 @@ export function createViews({
         {state.summary && (
           <section>
             <div className="section-title">
-              <h2>Today’s sales</h2>
-              {link("View sales", "sales")}
+              <h2>{can("payments.manage") ? "Today’s sales" : "My sales today"}</h2>
+              {link(can("payments.manage") ? "View sales" : "View all", "sales")}
             </div>
             <div className="card daily">
               <strong className="money-lg">
@@ -1280,8 +1299,9 @@ export function createViews({
           "Notifications",
           "Browser alerts for payments and stock",
         )}
-        {can("payments.manage") && r("onboarding", "Payment setup")}
-        {can("payments.manage") && r("admin", "Account overview")}
+        {can("payments.manage") && r("weekly-summary", "Weekly summary")}
+        {can("payments.manage") && r("team", "Team", "Invite and manage staff")}
+        {can("payments.manage") && r("business-settings", "Business settings")}
         <div className="acct-actions">
           <button className="text-btn acct-logout" data-live="logout">
             Log out
@@ -2141,6 +2161,74 @@ function setupDone() {
     );
   }
 
+  const PERMS = [
+    ["SALES", [["Record sales", "Record payments and match them to products"]]],
+    ["STOCK", [["View inventory", "See products, selling prices and stock levels. Needed for the permissions below it"], ["Update stock", "Add received stock and correct counts"]]],
+    ["PRODUCTS & PRICES", [["Add products", "Create products, including during a sale"], ["Edit products", "Rename, change the photo and archive products"], ["Change selling price", "Edit what customers pay"], ["Change cost price", "See and edit cost prices. Profit stays owner-only"], ["Change low-stock alert", "Choose the stock level at which a product is marked Low"]]],
+  ];
+  function staffMember(name) {
+    const first = name.split(" ")[0];
+    const ini = name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+    return ownerOnly(
+      name,
+      <div className="card pad stack">
+        <div className="staff-head"><span className="avatar">{ini}</span><div><strong>{name}</strong><p className="caption muted">Staff</p></div></div>
+        <div className="card pad-sm stack-sm">
+          <div className="kv-row nob"><strong>What {first} can do</strong><span className="caption ok">2 of 8 on</span></div>
+          <p className="caption muted">Can</p>
+          <p>Record sales<br />View inventory (no cost prices)</p>
+          <p className="caption muted">Can’t</p>
+          <p>Add or edit products<br />Update stock<br />Change prices or low-stock alerts<br />Invite, remove or manage Staff — owner only</p>
+        </div>
+        <a className="list-link" href={"#/staff-permissions?name=" + encodeURIComponent(name)}>
+          <div className="grow"><strong>Manage permissions</strong><p>2 of 8 on · change or turn off anytime</p></div>
+          {ico("caret")}
+        </a>
+        <div className="form-actions"><button type="button" className="danger" data-live="remove-open">Remove from team</button></div>
+        {state.removeOpen && (
+          <div className="modal-backdrop">
+            <div className="modal card">
+              <h2>Remove {first} from your team?</h2>
+              <p>{first} won’t be able to open {state.tenant?.businessName || "your business"} or record sales. Their past sales stay recorded under their name. You can invite them again later.</p>
+              <p className="form-error" id="live-error" role="alert" />
+              <div className="form-actions">
+                <button type="button" className="secondary" data-live="remove-close">Cancel</button>
+                <button type="button" className="danger" data-live="remove-confirm">Remove</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>,
+      { back: "team", cls: "narrow" },
+    );
+  }
+  function staffPermissions(name) {
+    const first = name.split(" ")[0];
+    return ownerOnly(
+      first + "’s permissions",
+      <form id="live-staff-permissions" className="stack">
+        <p className="muted">{first} has 2 of 8 permissions. Changes apply as soon as you save.</p>
+        <div className="perm-grid">
+          {PERMS.map(([group, items]) => (
+            <div className="card perm-col" key={group}>
+              <p className="step-label">{group}</p>
+              {items.map(([t, d], i) => (
+                <label className="perm-row" key={t}>
+                  <span className="po-text"><strong>{t}</strong><small>{d}</small></span>
+                  <input type="checkbox" role="switch" name={t} defaultChecked={t === "Record sales" || t === "View inventory"} />
+                  <span className="switch" />
+                </label>
+              ))}
+            </div>
+          ))}
+        </div>
+        <p className="caption muted">Inviting, removing and managing staff always stays with you (owner). It can’t be given to staff.</p>
+        <p className="form-error" id="live-error" role="alert" />
+      </form>,
+      { back: "staff-member?name=" + encodeURIComponent(name), action: <button className="primary" type="submit" form="live-staff-permissions">Save changes</button> },
+    );
+  }
+
   function businessSettings() {
     const biz = state.tenant?.businessName || api.session?.businessName || "";
     return ownerOnly(
@@ -2189,6 +2277,8 @@ function setupDone() {
 
   return {
     weeklySummary,
+    staffMember,
+    staffPermissions,
     subscription,
     plans,
     wallet,
