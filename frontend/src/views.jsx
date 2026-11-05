@@ -537,7 +537,7 @@ export function createViews({
             state.coreErrors.map((error, i) => <p key={i}>{error}</p>),
             "warning",
           )}
-        <div className={can("payments.manage") ? "home-grid" : ""}>
+        <div className={can("payments.manage") ? "hm-grid" : ""}>
         {can("payments.manage") && (
           <section>
             <div className="section-title">
@@ -1794,9 +1794,15 @@ function setupProducts() {
   return <AuthFrame title="Add your products" back="setup-payments">
     <h1 className="auth-title desktop-only">Add your products</h1>
     <p className="step-label">STEP 3 OF 3</p>
+    <p className="plan-note">Free plan: up to 10 products. Upgrade to Pro any time for unlimited.</p>
     {n>0 && <p className="status-text">{n===1?'1 product added.':`${n} products added.`} Add another, or continue.</p>}
     <Callout tone="info" title="Add the products you sell">Add what you sell now, or any time later. You can start recording payments either way.</Callout>
     <form key={state.formNonce} id="live-setup-product" className="stack" noValidate>
+      <div className="photo-row">
+        <span className="photo-add">{ico("plus")}</span>
+        <div className="po-text"><strong>Product photo</strong><small>Optional. Helps staff find it quickly when selling.</small>
+          <button type="button" className="chip photo-btn" data-live="photo-unavailable">{ico("plus")} Add photo</button></div>
+      </div>
       {field('name','Product name','','text','','required placeholder="e.g. Shea butter 250g"')}
       {field('price','Selling price (₦)','','text','','required inputmode="decimal" placeholder="e.g. 2,000"')}
       {field('cost','Cost price (₦)','','text','Used to work out your profit.','required inputmode="decimal" placeholder="e.g. 1,400"')}
@@ -1976,7 +1982,7 @@ function setupDone() {
     return ownerOnly(
       "Wallet",
       <>
-        <div className="wallet-grid">
+        <div className="wl-grid">
           <div className="card pad stack-sm wallet-card">
             <span className="caption muted">Available balance</span>
             <strong className="money-lg">{dash}</strong>

@@ -3311,8 +3311,8 @@ body:has(.back-office) .demo-banner + .back-office .admin-sidebar { top:30px; he
 @media (max-width:767px){.wk-stats{grid-template-columns:1fr}}
 
 /* Home wallet and bell (Figma W-HM-01) */
-.home-grid{display:grid;gap:24px}
-@media (min-width:768px){.home-grid{grid-template-columns:368px 1fr;align-items:start}}
+.hm-grid{display:grid;gap:24px}
+@media (min-width:768px){.hm-grid{grid-template-columns:368px 1fr;align-items:start}}
 .kv-row{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #e7e5e4;padding-top:12px;margin-top:4px;font-size:14px}
 .sim-tag{display:inline-flex;align-items:center;gap:6px;margin:8px 0 0;padding:2px 8px;border-radius:999px;background:#e8f0fe;color:#1d4ed8;font-size:12px}
 .bell-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px}
@@ -3340,7 +3340,7 @@ body:has(.back-office) .demo-banner + .back-office .admin-sidebar { top:30px; he
 .usage{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}.usage-row{display:flex;justify-content:space-between;font-size:14px}
 .usage-bar{height:6px;border-radius:3px;background:#e7e5e4;overflow:hidden}.usage-bar span{display:block;height:100%;background:#0f6b5c}
 .kv-row.nob{border:0;padding:0;margin:0}
-.wallet-grid{display:grid;gap:24px}@media(min-width:768px){.wallet-grid{grid-template-columns:360px 1fr;align-items:start}}
+.wl-grid{display:grid;gap:24px}@media(min-width:768px){.wl-grid{grid-template-columns:360px 1fr;align-items:start}}
 .modal-backdrop{position:fixed;inset:0;background:rgba(28,25,23,.5);display:flex;align-items:center;justify-content:center;z-index:40;padding:16px}
 .modal{width:100%;max-width:560px;padding:24px;display:flex;flex-direction:column;gap:16px}
 .modal-head{display:flex;justify-content:space-between;align-items:flex-start}.modal-head h2{margin:0;font-size:18px}
@@ -3350,3 +3350,7 @@ body:has(.back-office) .demo-banner + .back-office .admin-sidebar { top:30px; he
 .recovery{justify-content:space-between}
 @media (max-width:767px){.recovery{justify-content:space-around}}
 .plan-pro{border:2px solid #0f6b5c;background:#e6f4f2}.plan-tag{font-size:12px;font-weight:600;color:#0f6b5c;margin-left:8px}
+.plan-note{margin:0;font-size:12px;line-height:16px;font-weight:500;letter-spacing:.1px;color:#57534e}
+.photo-row{display:flex;gap:16px;align-items:center}
+.photo-add{width:72px;height:72px;border:1px dashed #78716c;border-radius:12px;background:#eeedeb;display:flex;align-items:center;justify-content:center;flex:none}
+.photo-btn{height:40px;padding:0 12px;gap:4px;margin-top:4px;background:#fff;font-size:14px;width:fit-content}

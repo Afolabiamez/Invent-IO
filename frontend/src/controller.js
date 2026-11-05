@@ -589,6 +589,10 @@ export function createMerchantController({ ui, rerender }) {
         rerender();
         return;
       }
+      if (action === "photo-unavailable") {
+        toast("Product photos aren’t available yet.");
+        return;
+      }
       if (action === "plans-unavailable") {
         toast("Plans aren’t available yet.");
         return;
