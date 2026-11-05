@@ -24,7 +24,7 @@ const icons = {
 };
 
 export const Callout = ({tone, title, children}) => <div className={'callout ' + tone} role={tone === 'error' ? 'alert' : 'status'}>{icons[tone]}<div><strong>{title}</strong><p>{children}</p></div></div>;
-const StatusBlock = ({kind, title, children}) => <div className="status-block"><span className={'status-icon ' + kind}>{icons[kind === 'mail' ? 'mail' : kind === 'warn' ? 'warn' : 'check']}</span><h2>{title}</h2><p>{children}</p></div>;
+export const StatusBlock = ({kind, title, children}) => <div className="status-block"><span className={'status-icon ' + kind}>{icons[kind === 'mail' ? 'mail' : kind === 'warn' ? 'warn' : 'check']}</span><h2>{title}</h2><p>{children}</p></div>;
 
 export function CheckEmail({api}) {
   const email = recalledEmail('reset');
@@ -80,7 +80,7 @@ export function VerifyResult({token, verify, api}) {
     setResending(true);
     try { await api.request('/auth/verify-email/resend', {method: 'POST'}); rememberEmail('verify', recalledEmail('verify')); location.hash = '#/verify-pending'; } catch { setResult({phase: 'error', message: 'We couldn’t send a new link. Check your connection and try again.'}); } finally { setResending(false); }
   }, [api]);
-  const continueTo = api.session ? 'onboarding' : 'login';
+  const continueTo = api.session ? 'setup-business' : 'login';
   const email = recalledEmail('verify');
   const who = email || 'Your email';
   const p = result.phase;
