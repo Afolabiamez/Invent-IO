@@ -13,7 +13,7 @@ import {
 } from "./ui.jsx";
 import {
   AuthFrame,
-  StatusBlock,
+  Callout,
   CheckEmail,
   VerifyPending,
   VerifyResult,
@@ -1506,18 +1506,26 @@ export function createViews({
     const branches = state.tenant?.branches || [];
     return shell(
       "Record payment",
-      <form id="live-cash-payment" className="card pad stack" noValidate>
-        <h2>Record cash received</h2>
-        {field(
-          "amount",
-          "Amount received (₦)",
-          "",
-          "text",
-          "",
-          'required inputmode="decimal"',
-        )}
+      <form id="live-cash-payment" className="card pad stack record-form" noValidate>
+        <div>
+          <h2>Record payment</h2>
+          <p className="caption muted">
+            Enter what the customer paid. You’ll pick the products next.
+          </p>
+        </div>
+        <label className="field amount-field">
+          <span>Amount received</span>
+          <input
+            name="amount"
+            type="text"
+            inputMode="decimal"
+            placeholder="₦0"
+            autoComplete="off"
+            required
+          />
+        </label>
         {!state.tenant?.branchId &&
-          (branches.length ? (
+          branches.length > 1 && (
             <label className="field">
               Branch
               <select name="branchId" required>
@@ -1528,22 +1536,33 @@ export function createViews({
                 ))}
               </select>
             </label>
-          ) : (
-            notice(
-              "We couldn’t find your branch. Log out and log in again, then try once more.",
-              "warning",
-            )
-          ))}
-        <p className="caption muted">
-          Paystack transfers arrive automatically. This form records cash only.
-        </p>
+          )}
+        {!state.tenant?.branchId && branches.length === 1 && (
+          <input type="hidden" name="branchId" value={branches[0].id} />
+        )}
+        {!state.tenant?.branchId && !branches.length &&
+          notice(
+            "We couldn’t find your branch. Log out and log in again, then try once more.",
+            "warning",
+          )}
+        <div className="stack-sm">
+          <span className="field-label">How did they pay?</span>
+          <div className="chip-row">
+            <span className="chip selected" aria-current="true">
+              ✓ Cash
+            </span>
+          </div>
+          <p className="caption muted">
+            Transfers through Paystack are recorded automatically.
+          </p>
+        </div>
         <p className="form-error" id="live-error" role="alert" />
         <button
           className="primary"
           type="submit"
           disabled={!state.tenant?.branchId && !branches.length}
         >
-          Continue to products
+          Continue
         </button>
       </form>,
       { back: "sales", cls: "narrow" },
@@ -1652,10 +1671,11 @@ export function createViews({
   function setupBusiness() {
   return <AuthFrame title="Set up your business" back="home">
     <h1 className="auth-title desktop-only">Set up your business</h1>
+    <p className="step-label">STEP 1 OF 3</p>
     <p className="status-text">Where should your weekly summary of sales and stock go?</p>
     <form id="live-setup-business" className="stack" noValidate>
-      {field('whatsapp','WhatsApp number',state.setup?.whatsapp||'','tel','e.g. 0803 123 4567','autocomplete="tel"')}
-      {field('summaryEmail','Email for weekly summary',state.setup?.summaryEmail||person().email,'email','Your login email. Change it if you like.')}
+      {field('whatsapp','WhatsApp number',state.setup?.whatsapp||'','tel','0803… or +234…','autocomplete="tel"')}
+      {field('summaryEmail','Email for weekly summary',state.setup?.summaryEmail||person().email,'email','From your account — change it if you like')}
       <p className="form-error" id="live-error" role="alert"/>
       <div className="auth-bottom">
         <button className="primary" type="submit">Continue</button>
@@ -1668,17 +1688,15 @@ function setupProducts() {
   const n=state.setupCount||0;
   return <AuthFrame title="Add your products" back="setup-business">
     <h1 className="auth-title desktop-only">Add your products</h1>
-    <p className="status-text">{n?`${n} added. Add another, or continue.`:'Add the products you sell, one by one. You can import more later.'}</p>
+    <p className="step-label">STEP 3 OF 3</p>
+    {n>0 && <p className="status-text">{n===1?'1 product added.':`${n} products added.`} Add another, or continue.</p>}
+    <Callout tone="info" title="Add the products you sell">Add what you sell now, or any time later. You can start recording payments either way.</Callout>
     <form key={state.formNonce} id="live-setup-product" className="stack" noValidate>
-      {field('name','Product name','','text','','required')}
-      <div className="pair">
-        {field('price','Selling price (₦)','','text','','required inputmode="decimal"')}
-        {field('cost','Cost price (₦)','','text','Used to work out your profit.','required inputmode="decimal"')}
-      </div>
-      <div className="pair">
-        {field('stock','Stock you have now','','text','','required inputmode="numeric"')}
-        {field('threshold','Low stock alert at','','text','Warn me at this count.','required inputmode="numeric"')}
-      </div>
+      {field('name','Product name','','text','','required placeholder="e.g. Shea butter 250g"')}
+      {field('price','Selling price (₦)','','text','','required inputmode="decimal" placeholder="e.g. 2,000"')}
+      {field('cost','Cost price (₦)','','text','Used to work out your profit.','required inputmode="decimal" placeholder="e.g. 1,400"')}
+      {field('stock','Stock you have now','','text','','required inputmode="numeric" placeholder="e.g. 20"')}
+      {field('threshold','Low-stock alert at','','text','We’ll mark it Low at this number or fewer','required inputmode="numeric" placeholder="e.g. 5"')}
       <p className="form-error" id="live-error" role="alert"/>
       <div className="auth-bottom">
         <button className="primary" type="submit" data-again="1">Save &amp; add another</button>
@@ -1690,8 +1708,18 @@ function setupProducts() {
 }
 function setupDone() {
   const biz=state.tenant?.businessName||api.session?.businessName||'Your business';
+  const n=state.setupCount||0;
   return <AuthFrame title={biz+' is ready'} bigTitle>
-    <StatusBlock kind="check" title={biz+' is ready'}>When a customer pays, tap what they bought. The sale is recorded and your stock updates itself.</StatusBlock>
+    <h1 className="auth-title desktop-only">{biz}</h1>
+    <div className="setup-done">
+      <div className="done-head">
+        <span className="done-icon"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="m8 12.3 2.8 2.8L16.2 9.5" /></svg></span>
+        <h2>{biz} is ready</h2>
+        {n>0 && <p className="done-meta">{n===1?'1 product added':`${n} products added`}</p>}
+      </div>
+      <p className="status-text">When a customer pays, tap Record payment and choose what they bought. Invent IO records the sale and updates your stock.</p>
+      <p className="done-note">You can add more products, invite staff and change settings any time.</p>
+    </div>
     <div className="auth-bottom">{link('Go to Home','home','primary')}</div>
   </AuthFrame>;
 }
