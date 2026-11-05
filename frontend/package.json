@@ -13,6 +13,7 @@
     "test:ui": "node tests/react-ui-smoke.mjs"
   },
   "engines": {
+    
     "node": ">=22"
   },
   "devDependencies": {

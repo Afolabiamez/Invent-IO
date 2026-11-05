@@ -59,8 +59,11 @@ export function createMerchantController({ ui, rerender }) {
     initialized: false,
     submitting: false,
   };
-  let generation = 0, lastRoute = "", renderRoute = "";
+  let generation = 0,
+    lastRoute = "",
+    renderRoute = "";
   const api = createApi({
+    storage: localStorage,
     onExpired: () => {
       generation++;
       clearData();
@@ -106,12 +109,48 @@ export function createMerchantController({ ui, rerender }) {
       prompting: false,
     });
   }
-  const {shell, auth, checkEmail, verifyPending, home, products, importScreen, editor, onboarding, managedForm,
-    direct, changePassword, verifyEmailScreen, account, notificationSettings, moreScreen, admin, salesScreen, saleDetail,
-    recordPayment, matchScreen} = createViews({state, api, push, can, person, ui,
-      selectedItems, route: () => renderRoute || lastRoute, verify: async token => {
-        await api.request("/auth/verify-email", {method:"POST",body:{token},auth:false});
-      }});
+  const {
+    shell,
+    auth,
+    checkEmail,
+    verifyPending,
+    home,
+    products,
+    importScreen,
+    editor,
+    onboarding,
+    managedForm,
+    direct,
+    changePassword,
+    verifyEmailScreen,
+    account,
+    notificationSettings,
+    moreScreen,
+    admin,
+    salesScreen,
+    saleDetail,
+    recordPayment,
+    matchScreen,
+    setupBusiness,
+    setupProducts,
+    setupDone,
+  } = createViews({
+    state,
+    api,
+    push,
+    can,
+    person,
+    ui,
+    selectedItems,
+    route: () => renderRoute || lastRoute,
+    verify: async (token) => {
+      await api.request("/auth/verify-email", {
+        method: "POST",
+        body: { token },
+        auth: false,
+      });
+    },
+  });
   async function initialize() {
     if (!api.session || state.loading) return;
     const turn = ++generation;
@@ -130,7 +169,12 @@ export function createMerchantController({ ui, rerender }) {
       if (turn !== generation) return;
       prepareNotifications();
     } catch (error) {
-      if (turn === generation) state.error = message(error);
+      if (turn === generation) {
+  if (error.status === 403 && /verif/i.test(error.message)) {
+    state.loading = false; go("verify-pending", true); return;
+  }
+  state.error = message(error);
+}
     } finally {
       if (turn === generation) {
         state.loading = false;
@@ -165,7 +209,8 @@ export function createMerchantController({ ui, rerender }) {
     const support = push.support();
     if (!support.supported) {
       state.pushMessage = support.message;
-      if (["home", "account", "notification-settings"].includes(lastRoute)) rerender();
+      if (["home", "account", "notification-settings"].includes(lastRoute))
+        rerender();
       return;
     }
     try {
@@ -174,7 +219,8 @@ export function createMerchantController({ ui, rerender }) {
       state.enabled = ready.subscribed;
       state.pushReady = true;
       state.pushMessage = "";
-      if (["home", "account", "notification-settings"].includes(lastRoute)) rerender();
+      if (["home", "account", "notification-settings"].includes(lastRoute))
+        rerender();
       if (
         lastRoute === "home" &&
         Notification.permission === "default" &&
@@ -184,29 +230,54 @@ export function createMerchantController({ ui, rerender }) {
         state.prompting = true;
         modal(
           "Allow notifications?",
-          notice("Get payment and low-stock alerts. You can change this in Account at any time."),
-          [btn("Not now", "unused", "secondary", 'data-live="push-later"'),
+          notice(
+            "Get payment and low-stock alerts. You can change this in Account at any time.",
+          ),
+          [
+            btn("Not now", "unused", "secondary", 'data-live="push-later"'),
             btn(
               "Allow notifications",
               "unused",
               "primary",
               'data-live="push-enable"',
-            )],
+            ),
+          ],
         );
       }
     } catch (error) {
       if (turn !== generation) return;
       state.pushReady = false;
       state.pushMessage = message(error);
-      if (["home", "account", "notification-settings"].includes(lastRoute)) rerender();
+      if (["home", "account", "notification-settings"].includes(lastRoute))
+        rerender();
     }
   }
   function enter(route) {
     const previousRoute = lastRoute;
     lastRoute = route;
-    if (!api.session || ["welcome","login","create","forgot","reset","check","verify-email","verify-pending"].includes(route)) return;
-    if (!state.initialized && !state.loading && !state.error) { void initialize(); return; }
-    if (previousRoute !== route && state.initialized && ["home","sales"].includes(route)) {
+    if (
+      !api.session ||
+      [
+        "welcome",
+        "login",
+        "create",
+        "forgot",
+        "reset",
+        "check",
+        "verify-email",
+        "verify-pending",
+      ].includes(route)
+    )
+      return;
+    if (!state.initialized && !state.loading && !state.error) {
+      void initialize();
+      return;
+    }
+    if (
+      previousRoute !== route &&
+      state.initialized &&
+      ["home", "sales"].includes(route)
+    ) {
       void loadCore().then(rerender);
     }
   }
@@ -216,21 +287,19 @@ export function createMerchantController({ ui, rerender }) {
     if (["login", "create", "forgot", "reset"].includes(route))
       return auth(route);
     if (route === "check") return checkEmail();
-    if (route === "verify-pending") return api.session ? verifyPending() : auth("login");
+    if (route === "verify-pending")
+      return api.session ? verifyPending() : auth("login");
     if (route === "verify-email") return verifyEmailScreen(params);
     if (!api.session) return auth("login");
     if (state.loading)
-      return shell(
-        "Loading",
-        notice("Loading your workspace…"),
-      );
+      return shell("Loading", notice("Loading your workspace…"));
     if (state.error)
-      return shell(
-        "Workspace unavailable",
-        [notice(state.error, "warning"), btn("Try again", "unused", "primary", 'data-live="retry"'), btn("Log out", "unused", "secondary", 'data-live="logout"')],
-      );
-    if (!state.initialized)
-      return shell("Loading", "Loading your workspace…");
+      return shell("Workspace unavailable", [
+        notice(state.error, "warning"),
+        btn("Try again", "unused", "primary", 'data-live="retry"'),
+        btn("Log out", "unused", "secondary", 'data-live="logout"'),
+      ]);
+    if (!state.initialized) return shell("Loading", "Loading your workspace…");
     const screens = {
       home,
       "record-payment": recordPayment,
@@ -241,6 +310,9 @@ export function createMerchantController({ ui, rerender }) {
       import: importScreen,
       onboarding,
       "onboarding-managed": managedForm,
+         "setup-business": setupBusiness,
+"setup-products": setupProducts,
+"setup-done": setupDone,
       "onboarding-direct": direct,
       account,
       "change-password": changePassword,
@@ -254,6 +326,7 @@ export function createMerchantController({ ui, rerender }) {
       admin,
       "catalog-new": () => editor(),
       "catalog-edit": () => editor(params.get("id")),
+  
     };
     return screens[route]
       ? screens[route]()
@@ -380,7 +453,11 @@ export function createMerchantController({ ui, rerender }) {
   }
   function setError(form, error) {
     const target = $("#live-error", form) || $("#import-error");
-    if (target) target.textContent = form.dataset?.kind === "login" && error?.status === 401 ? "Email or password is incorrect. Check them and try again." : message(error);
+    if (target)
+      target.textContent =
+        form.dataset?.kind === "login" && error?.status === 401
+          ? "Email or password is incorrect. Check them and try again."
+          : message(error);
     else notifyError(error);
   }
   async function busy(form, work) {
@@ -641,6 +718,7 @@ export function createMerchantController({ ui, rerender }) {
           await api.request("/auth/reset-password", {
             method: "POST",
             body: { token, password: data.password },
+            ...(data.phone?.trim() ? { phone: data.phone.trim() } : {}),
             auth: false,
           });
           form.reset();
@@ -682,25 +760,80 @@ export function createMerchantController({ ui, rerender }) {
         return;
       }
       if (form.id === "live-cash-payment") {
-        if (!can("sales.allocate")) throw new Error("You don’t have permission to record payments.");
+        if (!can("sales.allocate"))
+          throw new Error("You don’t have permission to record payments.");
         const amountMinor = nairaToMinor(data.amount);
-        if (BigInt(amountMinor) <= 0n) throw new Error("Enter an amount greater than zero.");
+        if (BigInt(amountMinor) <= 0n)
+          throw new Error("Enter an amount greater than zero.");
         const branchId = state.tenant?.branchId || data.branchId;
         if (!branchId) throw new Error("Choose a branch first.");
-        const payment = await api.request("/payments/manual", {method:"POST", body:{amountMinor, branchId}});
-        await loadCore(); state.paymentId=payment.id; state.quantities={}; state.saleKey=null;
-        form.reset(); go("match-payment",true); return;
+        const payment = await api.request("/payments/manual", {
+          method: "POST",
+          body: { amountMinor, branchId },
+        });
+        await loadCore();
+        state.paymentId = payment.id;
+        state.quantities = {};
+        state.saleKey = null;
+        form.reset();
+        go("match-payment", true);
+        return;
       }
+
+      if (form.id === "live-setup-business") {
+  state.setup = { whatsapp: data.whatsapp.trim(), summaryEmail: data.summaryEmail.trim() };
+  go("setup-products", true);
+  return;
+}
+if (form.id === "live-setup-product") {
+  if (!can("catalog.write")) throw new Error("You don’t have permission to add products.");
+  const again = !!(event.nativeEvent?.submitter || event.submitter)?.dataset?.again;
+  const qty = Number(data.stock), low = Number(data.threshold);
+  if (!Number.isInteger(qty) || qty < 0 || !Number.isInteger(low) || low < 0)
+    throw new Error("Stock and alert level must be whole numbers.");
+  const product = await api.request("/products", { method: "POST", body: {
+    name: data.name.trim(),
+    price: safeMinorNumber(nairaToMinor(data.price)),
+    cost: safeMinorNumber(nairaToMinor(data.cost)),
+  }});
+  state.setupCount = (state.setupCount || 0) + 1;
+  const branchId = state.tenant?.branchId, problems = [];
+  if (product?.id && branchId) {
+    if (qty > 0) try {
+      await api.request("/stock/adjustments", { method: "POST",
+        body: { branchId, productId: product.id, delta: qty, reason: "Opening stock" } });
+    } catch (e) { problems.push("stock: " + message(e)); }
+    try {
+      await api.request(`/branches/${branchId}/stock/${product.id}`, { method: "PATCH",
+        body: { lowStockThreshold: low } });
+    } catch (e) { problems.push("alert level: " + message(e)); }
+  }
+  await loadProducts();
+  if (problems.length) toast("Saved, but " + problems.join(" · "));
+  if (again) { state.formNonce++; rerender(); if (!problems.length) toast("Product saved. Add the next one."); return; }
+  go("setup-done", true);
+  return;
+}
+
       if (form.id === "live-change-password") {
-        if (data.newPassword !== data.confirm) throw new Error("Passwords don’t match.");
+        if (data.newPassword !== data.confirm)
+          throw new Error("Passwords don’t match.");
         await api.request("/auth/change-password", {
-          method: "POST", retry: false,
-          body: { currentPassword: data.currentPassword, newPassword: data.newPassword },
+          method: "POST",
+          retry: false,
+          body: {
+            currentPassword: data.currentPassword,
+            newPassword: data.newPassword,
+          },
         });
         form.reset();
         await push.disable().catch(() => {});
-        api.clear(); generation++; clearData(); state.profile = null;
-        go("login", true); toast("Password updated. Log in with your new password.");
+        api.clear();
+        generation++;
+        clearData();
+        state.profile = null;
+        go("login", true);
+        toast("Password updated. Log in with your new password.");
         return;
       }
       if (form.id === "live-product") {
