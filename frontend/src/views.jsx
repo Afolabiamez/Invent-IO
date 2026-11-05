@@ -100,6 +100,7 @@ export function createViews({
     const navKey =
       {
         wallet: "home",
+        paystack: "business-settings",
         withdrawal: "home",
         "payment-detail": "home",
         "subscription-pro": "business-settings",
@@ -642,6 +643,34 @@ export function createViews({
       </>
     );
   }
+  function planBanner() {
+    const plan = state.tenant?.plan;
+    if (!plan || !can("payments.manage")) return null;
+    if (plan.status === "trialing" && plan.daysLeft != null && plan.daysLeft <= 2)
+      return notice(
+        <>
+          <strong>Pro trial · {plan.daysLeft} {plan.daysLeft === 1 ? "day" : "days"} left</strong>
+          <br />
+          Subscribe to keep up to 5 staff and unlimited products.
+          {plan.endsOn ? " On " + plan.endsOn + " you move to Free." : ""}
+          <br />
+          {link("Subscribe", "plans", "text-btn")}
+        </>,
+        "info",
+      );
+    if (plan.status === "ended" && plan.overLimits)
+      return notice(
+        <>
+          <strong>Pro ended</strong>
+          <br />
+          You’re over the Free plan, so recording payments is paused. Subscribe again, or get down to 1 staff and 10 products.
+          <br />
+          {link("Subscribe again", "plans", "text-btn")}
+        </>,
+        "warning",
+      );
+    return null;
+  }
   function home() {
     const day = new Date().toLocaleDateString("en-GB", {
       weekday: "short",
@@ -652,6 +681,7 @@ export function createViews({
     return shell(
       "Home",
       <div className="stack">
+        {planBanner()}
         {dashboard()}
         {state.catalogError && notice(state.catalogError, "warning")}
       </div>,
@@ -1442,9 +1472,25 @@ export function createViews({
             i.qty,
         )
         .join(", ") || "\u2014";
+    const paused =
+      state.tenant?.plan?.status === "ended" &&
+      state.tenant?.plan?.overLimits &&
+      !state.pausedDismissed;
     return shell(
       "Sales",
       <div className="stack">
+        {paused && (
+          <div className="modal-backdrop">
+            <div className="modal card">
+              <div className="modal-head"><h2>Recording payments is paused</h2><button type="button" className="icon-btn" data-live="paused-close" aria-label="Close">{"\u2715"}</button></div>
+              <p className="muted">Pro has ended and {state.tenant?.businessName || "your business"} is over the Free plan. Payments still come in and wait here. Subscribe again, or get down to 1 staff and 10 products.</p>
+              <div className="form-actions">
+                <button type="button" className="secondary" data-live="paused-close">Not now</button>
+                <button type="button" className="primary" data-live="go" data-to="plans">Subscribe again</button>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="chip-row">
           {chip(
             "salesTab",
@@ -1452,8 +1498,9 @@ export function createViews({
             "Pending payments (" + state.payments.length + ")",
           )}
           {can("reports.view") && chip("salesTab", "recorded", "Recorded")}
+          {chip("salesTab", "notsale", "Not a sale")}
           <span className="chip-gap" />
-          {state.salesTab === "pending" ? (
+          {state.salesTab === "notsale" ? null : state.salesTab === "pending" ? (
             <>
               <span className="chip-label">Sort</span>
               {chip("salesSort", "oldest", "Oldest first")}
@@ -1470,7 +1517,9 @@ export function createViews({
         {state.coreErrors.map((e, i) => (
           <React.Fragment key={i}>{notice(e, "warning")}</React.Fragment>
         ))}
-        {state.salesTab === "pending" || !can("reports.view") ? (
+        {state.salesTab === "notsale" ? (
+          empty("Nothing marked Not a sale", "Payments you mark as Not a sale will show here. They aren’t counted in your sales.")
+        ) : state.salesTab === "pending" || !can("reports.view") ? (
           pendingList.length ? (
             <>
               <div className="pay-table sales-table" role="table">
@@ -2336,6 +2385,30 @@ function setupDone() {
     );
   }
 
+  function paystackPage() {
+    const dash = "\u2014";
+    return ownerOnly(
+      "Paystack",
+      <div className="card pad stack">
+        <div className="card">
+          <div className="kv"><span>Status</span><strong>Not connected</strong></div>
+          <div className="kv"><span>Secret key</span><strong>{state.psKey ? "sk_live_ •••• " + state.psKey : dash}</strong></div>
+          <div className="kv"><span>Webhook</span><strong>{dash}</strong></div>
+        </div>
+        <a className="list-link card" href="#/connect-paystack">
+          <div className="grow"><strong>{state.psKey ? "Replace secret key" : "Connect Paystack"}</strong><p>{state.psKey ? "Use this if you created a new key in Paystack" : "Use your own Paystack account"}</p></div>
+          {ico("caret")}
+        </a>
+        <label className="field">Your webhook URL
+          <input type="text" readOnly disabled placeholder="Your webhook link will appear here" />
+        </label>
+        <button className="secondary" type="button" data-live="invite-unavailable">Copy link</button>
+        <p className="caption muted">Only you can see or change this. Paystack pays out to your bank, so there’s no Invent IO wallet for this business.</p>
+      </div>,
+      { back: "business-settings", cls: "narrow" },
+    );
+  }
+
   function businessSettings() {
     const biz = state.tenant?.businessName || api.session?.businessName || "";
     return ownerOnly(
@@ -2350,8 +2423,8 @@ function setupDone() {
           <div className="kv"><span>Paystack · set up by Invent IO</span><strong>Sandbox</strong></div>
         </div>
         <p className="step-label">PAYMENTS</p>
-        <a className="list-link card" href="#/connect-paystack">
-          <div className="grow"><strong>Connect Paystack</strong><p>Use your own Paystack account</p></div>
+        <a className="list-link card" href="#/paystack">
+          <div className="grow"><strong>Paystack</strong><p>Connection, secret key and webhook</p></div>
           {ico("caret")}
         </a>
         <a className="list-link card" href="#/onboarding">
@@ -2384,6 +2457,7 @@ function setupDone() {
 
   return {
     weeklySummary,
+    paystackPage,
     withdrawal,
     paymentDetail,
     subscriptionPro,

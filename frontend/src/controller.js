@@ -132,6 +132,7 @@ export function createMerchantController({ ui, rerender }) {
     saleDetail,
     recordPayment,
     weeklySummary,
+    paystackPage,
     withdrawal,
     paymentDetail,
     subscriptionPro,
@@ -326,6 +327,7 @@ export function createMerchantController({ ui, rerender }) {
       "weekly-summary": weeklySummary,
       team,
       "invite-staff": inviteStaff,
+      paystack: paystackPage,
       withdrawal: () => withdrawal(params.get("status") || "pending"),
       "payment-detail": paymentDetail,
       "subscription-pro": () => subscriptionPro(params.get("ended") === "1"),
@@ -634,6 +636,11 @@ export function createMerchantController({ ui, rerender }) {
         rerender();
         return;
       }
+      if (action === "paused-close") {
+        state.pausedDismissed = true;
+        rerender();
+        return;
+      }
       if (action === "cancel-open" || action === "cancel-close") {
         state.cancelProOpen = action === "cancel-open";
         rerender();
@@ -938,8 +945,10 @@ export function createMerchantController({ ui, rerender }) {
       }
       if (form.id === "live-connect-paystack") {
         const key = (data.secretKey || "").trim();
-        if (!/^sk_(live|test)_/.test(key))
-          throw new Error("That doesn’t look like a Paystack secret key. It starts with sk_live_.");
+        if (/^sk_test_/.test(key))
+          throw new Error("That’s a test key. Paste your live secret key, which starts with sk_live_.");
+        if (!/^sk_live_/.test(key))
+          throw new Error("Paystack didn’t accept this key. Copy it again and check it starts with sk_live_.");
         state.psKey = key.slice(-3);
         state.psStep = 2;
         rerender();
