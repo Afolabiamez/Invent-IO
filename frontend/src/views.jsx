@@ -15,6 +15,7 @@ import {
   AuthFrame,
   Callout,
   CheckEmail,
+  InviteStatus,
   VerifyPending,
   VerifyResult,
 } from "./authScreens.jsx";
@@ -99,6 +100,9 @@ export function createViews({
     const navKey =
       {
         wallet: "home",
+        withdrawal: "home",
+        "payment-detail": "home",
+        "subscription-pro": "business-settings",
         "staff-member": "team",
         "staff-permissions": "team",
         subscription: "business-settings",
@@ -285,8 +289,8 @@ export function createViews({
       </>
     );
   }
-  function auth(kind) {
-    const title = {
+  function auth(kind, invite = false) {
+    const title = invite ? "Log in to join your team" : {
       create: "Create account",
       join: "Join your team",
       forgot: "Reset password",
@@ -311,7 +315,9 @@ export function createViews({
         ? "Send reset link"
         : kind === "reset"
           ? "Save new password"
-          : title;
+          : invite
+            ? "Log in and join"
+            : title;
     const errorLine = (
       <p className="form-error auth-alert" role="alert" id="live-error" />
     );
@@ -368,6 +374,12 @@ export function createViews({
               <div className="auth-form-brand">{brand()}</div>
             )}
             {kind === "login" && errorLine}
+            {invite && <div className="auth-heading"><h1>{title}</h1></div>}
+            {invite && (
+              <Callout tone="info" title="You’ve been invited as Staff">
+                To start, you can record sales and view inventory. Your owner can change this later — see it anytime in Account.
+              </Callout>
+            )}
             {kind !== "login" && (
               <div className="auth-heading">
                 <h1>{title}</h1>
@@ -425,7 +437,7 @@ export function createViews({
               )}
             {kind === "login" &&
               link("Forgot password?", "forgot", "text-btn auth-forgot")}
-            {kind === "login" && (
+            {kind === "login" && !invite && (
               <p className="auth-hint">
                 Joining a team? Open the invite link from your owner.
               </p>
@@ -442,11 +454,13 @@ export function createViews({
               {kind !== "forgot" &&
                 link(
                   kind === "login"
-                    ? "Create account"
+                    ? invite
+                      ? "New to Invent IO? Join with a new account"
+                      : "Create account"
                     : kind === "create"
                       ? "Log in instead"
                       : "Back to log in",
-                  kind === "login" ? "create" : "login",
+                  kind === "login" ? (invite ? "join" : "create") : "login",
                 )}
             </div>
           </form>
@@ -2229,6 +2243,99 @@ function setupDone() {
     );
   }
 
+  function withdrawal(status) {
+    const dash = "\u2014";
+    const meta = {
+      pending: ["Pending", "pill info"],
+      successful: ["Successful", "pill ok"],
+      failed: ["Failed, funds returned", "pill err"],
+    }[status] || ["Pending", "pill info"];
+    return ownerOnly(
+      "Withdrawal",
+      <div className="card pad stack">
+        <p className="sim-tag">{ico("info")} Simulated · test mode, no real money moves</p>
+        <div className="wd-top"><span className={meta[1]}>{meta[0]}</span><strong className="money-lg">{dash}</strong><span className="caption muted">Withdrawal amount</span></div>
+        {status === "failed" && notice("The bank couldn’t take this withdrawal. The money is back in your wallet.", "warning")}
+        <div className="card">
+          <div className="kv"><span>Withdrawal fee</span><strong>{dash}</strong></div>
+          <div className="kv"><span>Amount received</span><strong>{dash}</strong></div>
+          <div className="kv"><span>To</span><strong>{dash}</strong></div>
+          <div className="kv"><span>Requested</span><strong>{dash}</strong></div>
+          <div className="kv"><span>Reference</span><strong>{dash}</strong></div>
+        </div>
+        {status === "pending" && (
+          <div className="form-actions"><button className="secondary" type="button" data-live="cancel-withdrawal">Cancel withdrawal</button></div>
+        )}
+      </div>,
+      { back: "wallet", cls: "narrow" },
+    );
+  }
+  function paymentDetail() {
+    const dash = "\u2014";
+    return ownerOnly(
+      "Payment",
+      <div className="card pad stack">
+        <div className="wd-top"><strong className="money-lg">{dash}</strong><span className="caption muted">Customer payment through Invent IO</span></div>
+        <div className="card">
+          <div className="kv"><span>Received</span><strong>{dash}</strong></div>
+          <div className="kv"><span>Reference</span><strong>{dash}</strong></div>
+        </div>
+        {notice("Recording or voiding the sale doesn’t change this Wallet payment.", "info")}
+      </div>,
+      { back: "wallet", cls: "narrow" },
+    );
+  }
+  function subscriptionPro(ended) {
+    const dash = "\u2014";
+    const bar = (label, text, pct) => (
+      <div className="usage"><div className="usage-row"><span>{label}</span><strong>{text}</strong></div><div className="usage-bar"><span style={{ width: pct + "%" }} /></div></div>
+    );
+    return ownerOnly(
+      "Subscription",
+      <div className="card pad stack">
+        {ended && notice(<><strong>Pro ended</strong><br />Until you’re within Free or subscribe again: no recording payments and no new products. Sales history, stock and Paystack payments coming in are not affected. Nothing is deleted.</>, "warning")}
+        <div className="card pad-sm stack-sm">
+          <div className="kv-row nob"><strong>{ended ? "Free" : "Pro"}</strong><strong>{dash}</strong></div>
+          <span className="caption muted">{ended ? "1 staff · 10 products" : "a month"}</span>
+          {!ended && <span className="caption muted">5 staff · unlimited products</span>}
+        </div>
+        <div className="card pad-sm stack-sm">
+          {bar("Staff", ended ? "\u2014 of 1" : "\u2014 of 5", 0)}
+          {bar("Products", ended ? state.products.length + " of 10" : state.products.length + " · unlimited", ended ? Math.min(100, state.products.length * 10) : 0)}
+        </div>
+        {!ended && (
+          <div className="card">
+            <div className="kv"><span>Next payment</span><strong>{dash}</strong></div>
+            <div className="kv"><span>Payment card</span><strong>{dash}</strong></div>
+          </div>
+        )}
+        <div className="card">
+          {(ended ? [["Subscribe again", "plans"]] : [["Change plan", "plans", "Monthly or yearly"], ["Update card"], ["Receipts"], ["Cancel Pro", null, null, "cancel-open"]]).map(([t, to, sub, act]) => (
+            to ? (
+              <a className="list-link" key={t} href={"#/" + to}><div className="grow"><strong>{t}</strong>{sub && <p>{sub}</p>}</div>{ico("caret")}</a>
+            ) : (
+              <button type="button" className="list-link" key={t} data-live={act || "plans-unavailable"}><div className="grow"><strong>{t}</strong></div>{ico("caret")}</button>
+            )
+          ))}
+        </div>
+        {state.cancelProOpen && (
+          <div className="modal-backdrop">
+            <div className="modal card">
+              <h2>Cancel Pro?</h2>
+              <p>Pro stays until the end of this period. Then you move to Free. If you still have more than 1 staff or 10 products, you won’t be able to record payments or add products until you subscribe again.</p>
+              <p className="form-error" id="live-error" role="alert" />
+              <div className="form-actions">
+                <button type="button" className="secondary" data-live="cancel-close">Keep Pro</button>
+                <button type="button" className="danger" data-live="cancel-confirm">Cancel Pro</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>,
+      { back: "business-settings", cls: "narrow" },
+    );
+  }
+
   function businessSettings() {
     const biz = state.tenant?.businessName || api.session?.businessName || "";
     return ownerOnly(
@@ -2277,6 +2384,9 @@ function setupDone() {
 
   return {
     weeklySummary,
+    withdrawal,
+    paymentDetail,
+    subscriptionPro,
     staffMember,
     staffPermissions,
     subscription,
@@ -2303,6 +2413,7 @@ function setupDone() {
     managedForm,
     direct,
     changePassword,
+    inviteStatus: (kind) => <InviteStatus kind={kind} />,
     checkEmail: () => <CheckEmail api={api} />,
     verifyPending: () => <VerifyPending api={api} />,
     verifyEmailScreen: (

@@ -123,6 +123,7 @@ export function createMerchantController({ ui, rerender }) {
     direct,
     changePassword,
     verifyEmailScreen,
+    inviteStatus,
     account,
     notificationSettings,
     moreScreen,
@@ -131,6 +132,9 @@ export function createMerchantController({ ui, rerender }) {
     saleDetail,
     recordPayment,
     weeklySummary,
+    withdrawal,
+    paymentDetail,
+    subscriptionPro,
     staffMember,
     staffPermissions,
     subscription,
@@ -299,6 +303,9 @@ export function createMerchantController({ ui, rerender }) {
     if (route === "welcome") return null;
     if (["login", "create", "join", "forgot", "reset"].includes(route))
       return auth(route);
+    if (route.startsWith("invite-") && route !== "invite-staff" && route !== "invite-login")
+      return inviteStatus(route.slice(7));
+    if (route === "invite-login") return auth("login", true);
     if (route === "check") return checkEmail();
     if (route === "verify-pending")
       return api.session ? verifyPending() : auth("login");
@@ -319,6 +326,9 @@ export function createMerchantController({ ui, rerender }) {
       "weekly-summary": weeklySummary,
       team,
       "invite-staff": inviteStaff,
+      withdrawal: () => withdrawal(params.get("status") || "pending"),
+      "payment-detail": paymentDetail,
+      "subscription-pro": () => subscriptionPro(params.get("ended") === "1"),
       "staff-member": () => staffMember(params.get("name") || "Staff member"),
       "staff-permissions": () => staffPermissions(params.get("name") || "Staff member"),
       subscription,
@@ -622,6 +632,17 @@ export function createMerchantController({ ui, rerender }) {
           }
         }
         rerender();
+        return;
+      }
+      if (action === "cancel-open" || action === "cancel-close") {
+        state.cancelProOpen = action === "cancel-open";
+        rerender();
+        return;
+      }
+      if (action === "cancel-confirm" || action === "cancel-withdrawal") {
+        const e = document.getElementById("live-error");
+        if (e) e.textContent = "This isn’t available yet.";
+        else toast("This isn’t available yet.");
         return;
       }
       if (action === "remove-open" || action === "remove-close") {
