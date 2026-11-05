@@ -131,6 +131,9 @@ export function createMerchantController({ ui, rerender }) {
     saleDetail,
     recordPayment,
     weeklySummary,
+    subscription,
+    wallet,
+    connectPaystack,
     inviteStaff,
     setupPayments,
     team,
@@ -312,6 +315,9 @@ export function createMerchantController({ ui, rerender }) {
       "weekly-summary": weeklySummary,
       team,
       "invite-staff": inviteStaff,
+      subscription,
+      wallet,
+      "connect-paystack": connectPaystack,
       "setup-payments": setupPayments,
       "business-settings": businessSettings,
       "sale-detail": () => saleDetail(params.get("id")),
@@ -544,7 +550,16 @@ export function createMerchantController({ ui, rerender }) {
     const action = b.dataset.live;
     try {
       if (action === "withdraw") {
-        toast("Withdrawals aren’t available yet.");
+        go("wallet");
+        return;
+      }
+      if (action === "withdraw-open" || action === "withdraw-close") {
+        state.withdrawOpen = action === "withdraw-open";
+        rerender();
+        return;
+      }
+      if (action === "plans-unavailable") {
+        toast("Plans aren’t available yet.");
         return;
       }
       if (action === "invite-staff") {
@@ -822,6 +837,13 @@ export function createMerchantController({ ui, rerender }) {
         };
         toast("Changes can’t be saved yet.");
         return;
+      }
+
+      if (form.id === "live-withdraw") {
+        throw new Error("Withdrawals aren’t available yet.");
+      }
+      if (form.id === "live-connect-paystack") {
+        throw new Error("Connecting Paystack isn’t available yet.");
       }
 
       if (form.id === "live-setup-payments") {

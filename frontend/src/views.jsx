@@ -81,6 +81,10 @@ export function createViews({
       : [];
     const navKey =
       {
+        wallet: "home",
+        subscription: "business-settings",
+        "connect-paystack": "business-settings",
+        "invite-staff": "team",
         onboarding: "business-settings",
         admin: "business-settings",
         "onboarding-managed": "business-settings",
@@ -1931,6 +1935,99 @@ function setupDone() {
     );
   }
 
+  function subscription() {
+    const n = state.products.filter((x) => x.active !== false).length;
+    const bar = (label, used, max) => (
+      <div className="usage">
+        <div className="usage-row"><span>{label}</span><strong>{used} of {max}</strong></div>
+        <div className="usage-bar"><span style={{ width: Math.min(100, (used / max) * 100) + "%" }} /></div>
+      </div>
+    );
+    return ownerOnly(
+      "Subscription",
+      <div className="card pad stack">
+        <div className="card pad-sm stack-sm">
+          <div className="kv-row nob"><strong>Free</strong><strong>{"\u20A6"}0</strong></div>
+          <span className="caption muted">1 staff · 10 products</span>
+        </div>
+        <div className="card pad-sm stack-sm">
+          {bar("Staff", 1, 1)}
+          {bar("Products", n, 10)}
+        </div>
+        {notice(<><strong>Try Pro free for 7 days</strong><br />Up to 5 staff and unlimited products. No card needed. You can try it once.<br /><button type="button" className="text-btn" data-live="plans-unavailable">Start free trial</button></>, "info")}
+        <div className="form-actions"><button className="primary" type="button" data-live="plans-unavailable">See plans</button></div>
+      </div>,
+      { back: "business-settings", cls: "narrow" },
+    );
+  }
+  function wallet() {
+    const dash = "\u2014";
+    return ownerOnly(
+      "Wallet",
+      <>
+        <div className="wallet-grid">
+          <div className="card pad stack-sm wallet-card">
+            <span className="caption muted">Available balance</span>
+            <strong className="money-lg">{dash}</strong>
+            <span className="caption muted">Ready to withdraw now</span>
+            <div className="kv-row"><span>Total received (all time)</span><strong>{dash}</strong></div>
+            <button className="primary" type="button" data-live="withdraw-open">Withdraw</button>
+          </div>
+          <section className="stack-sm">
+            <p className="step-label">TRANSACTIONS</p>
+            <div className="chip-row">
+              {["All", "Customer payments", "Withdrawals"].map((t, i) => (
+                <span key={t} className={"chip" + (i === 0 ? " selected" : "")}>{i === 0 ? "\u2713 " : ""}{t}</span>
+              ))}
+            </div>
+            {empty("No transactions yet", "Customer payments and withdrawals will show here.")}
+          </section>
+        </div>
+        <p className="sim-tag">{ico("info")} Simulated · test mode, no real money moves</p>
+        {state.withdrawOpen && (
+          <div className="modal-backdrop">
+            <form id="live-withdraw" className="modal card" noValidate>
+              <div className="modal-head">
+                <div><h2>Withdraw</h2><p className="caption muted">Money goes to your withdrawal account.</p></div>
+                <button type="button" className="icon-btn" data-live="withdraw-close" aria-label="Close">{"\u2715"}</button>
+              </div>
+              <label className="field amount-field"><span>Amount to withdraw</span>
+                <input name="amount" type="text" inputMode="decimal" placeholder={"\u20A60"} autoComplete="off" required />
+              </label>
+              <p className="caption muted">You can withdraw up to {dash}</p>
+              <div className="card">
+                <div className="kv"><span>Available balance</span><strong>{dash}</strong></div>
+                <div className="kv"><span>To</span><strong>No withdrawal account yet</strong></div>
+              </div>
+              <p className="form-error" id="live-error" role="alert" />
+              <div className="form-actions">
+                <button type="button" className="secondary" data-live="withdraw-close">Cancel</button>
+                <button type="submit" className="primary">Continue</button>
+              </div>
+            </form>
+          </div>
+        )}
+      </>,
+      { back: "home", subtitle: "Invent IO collection account" },
+    );
+  }
+  function connectPaystack() {
+    return <AuthFrame title="Connect Paystack" back="business-settings">
+      <h1 className="auth-title desktop-only">Connect Paystack</h1>
+      <p className="step-label">1 OF 3 · SECRET KEY</p>
+      <p className="status-text">In your Paystack dashboard, go to Settings › API Keys & Webhooks and copy your live secret key.</p>
+      <form id="live-connect-paystack" className="stack" noValidate>
+        {field("secretKey", "Secret key", "", "password", "Starts with sk_live_", 'required autocomplete="off" placeholder="sk_live_…"')}
+        <Callout tone="info" title="Keep this key private">It’s stored encrypted. After you save it, Invent IO only shows the last 3 characters. Only you, the owner, can change it.</Callout>
+        <p className="form-error" id="live-error" role="alert" />
+        <div className="auth-bottom">
+          <button className="primary" type="submit">Check key</button>
+          {link("Do this later", "business-settings")}
+        </div>
+      </form>
+    </AuthFrame>;
+  }
+
   function businessSettings() {
     const biz = state.tenant?.businessName || api.session?.businessName || "";
     return ownerOnly(
@@ -1945,6 +2042,10 @@ function setupDone() {
           <div className="kv"><span>Paystack · set up by Invent IO</span><strong>Sandbox</strong></div>
         </div>
         <p className="step-label">PAYMENTS</p>
+        <a className="list-link card" href="#/connect-paystack">
+          <div className="grow"><strong>Connect Paystack</strong><p>Use your own Paystack account</p></div>
+          {ico("caret")}
+        </a>
         <a className="list-link card" href="#/onboarding">
           <div className="grow"><strong>Payment setup</strong><p>Choose how customers pay you</p></div>
           {ico("caret")}
@@ -1954,18 +2055,18 @@ function setupDone() {
           {ico("caret")}
         </a>
         <p className="step-label">WITHDRAWALS</p>
-        <div className="list-link card">
+        <a className="list-link card" href="#/wallet">
           <div className="grow"><strong>Withdrawal account</strong><p>Not set up yet</p></div>
           {ico("caret")}
-        </div>
+        </a>
         <p className="caption muted">
           Only you can see or change this. Shown only for businesses using Invent IO payment collection.
         </p>
         <p className="step-label">SUBSCRIPTION</p>
-        <div className="list-link card">
-          <div className="grow"><strong>Subscription</strong><p>Free plan</p></div>
+        <a className="list-link card" href="#/subscription">
+          <div className="grow"><strong>Subscription</strong><p>Free plan · 1 staff, 10 products</p></div>
           {ico("caret")}
-        </div>
+        </a>
         <p className="form-error" id="live-error" role="alert" />
         <button className="primary save-btn" type="submit">Save changes</button>
       </form>,
@@ -1975,6 +2076,9 @@ function setupDone() {
 
   return {
     weeklySummary,
+    subscription,
+    wallet,
+    connectPaystack,
     inviteStaff,
     setupPayments,
     team,
